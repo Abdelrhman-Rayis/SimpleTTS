@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Continuous AI PDF Reader</title>
+    
+    <!-- PDF.js library for custom rendering -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf_viewer.min.css">
+    <script>pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';</script>
+
+    <style>
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+            margin: 0; padding: 20px; background: #f4f4f9; 
+            display: flex; height: 100vh; box-sizing: border-box; gap: 20px; 
+        }
+        .sidebar { 
+            width: 350px; min-width: 350px; background: white; 
+            padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); 
+            display: flex; flex-direction: column; 
+            z-index: 10;
+        }
+        
+        /* Custom PDF Viewer Styles */
+        .viewer-wrapper { 
+            flex-grow: 1; background: #e5e7eb; border-radius: 12px; 
+            box-shadow: inset 0 4px 15px rgba(0,0,0,0.05); overflow: auto; 
+            display: flex; align-items: flex-start; justify-content: center;
+            position: relative;
+        }
+        
+        .pdf-page-container {
+            position: relative;
+            background: white;
+            margin: 20px auto;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        #pdf-canvas {
+            display: block;
+        }
+        
+        /* Highlight styles inside the PDF.js text layer */
+        #text-layer {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            opacity: 1 !important; 
+            mix-blend-mode: multiply;
+        }
+        
+        .textLayer span {
+            color: transparent !important; 
+        }
+
+        // Make the active-pdf-word class transition smoothly
+        .active-pdf-word {
+            background-color: rgba(79, 70, 229, 0.45) !important;
+            border-radius: 4px;
+            box-shadow: 0 0 3px rgba(79, 70, 229, 0.5);
+            transition: background-color 0.15s ease-out, box-shadow 0.15s ease-out;
+        }
+        
+        .active-pdf-sentence {
+            background-color: rgba(253, 224, 71, 0.3) !important;
+            border-radius: 3px;
+        }
+
+        /* UI Controls */
+        h1 { font-size: 1.5rem; margin-top: 0; color: #1e1b4b; }
+        p { color: #4b5563; font-size: 0.95rem; }
+        input[type="file"] { margin: 10px 0 15px 0; width: 100%; }
+        
+        button { 
+            background: #4f46e5; color: white; border: none; padding: 10px; 
+            border-radius: 6px; font-size: 15px; cursor: pointer; font-weight: 600;
+            transition: background 0.2s;
+        }
+        button:hover:not(:disabled) { background: #4338ca; }
+        button:disabled { background: #a5b4fc; cursor: not-allowed; }
+
+        /* Pagination Controls */
+        .page-navigation {
+            display: flex; justify-content: space-between; align-items: center; 
+            background: #f9fafb; padding: 12px; border-radius: 8px; 
+            margin-top: 15px; border: 1px solid #e5e7eb;
+        }
+        .page-navigation button {
+            width: 45px; background: #e5e7eb; color: #374151; padding: 8px;
+        }
+        .page-navigation button:hover:not(:disabled) { background: #d1d5db; }
+        .page-navigation button:disabled { background: #f3f4f6; color: #9ca3af; }
+        
+        .page-info { display: flex; align-items: center; gap: 8px; font-weight: 500; color: #4b5563; }
+        .page-info input { 
+            width: 50px; padding: 6px; text-align: center; 
+            border: 1px solid #d1d5db; border-radius: 4px; font-weight: bold;
+        }
+
+        .playback-controls { display: flex; gap: 10px; margin-top: 15px; }
+        
+        #player { width: 100%; margin-top: 15px; outline: none; }
+        #status { color: #6b7280; font-size: 0.9rem; margin-top: 15px; padding: 10px; background: #f3f4f6; border-radius: 6px; }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <h1>📖 Interactive Reader</h1>
+        <p>Highlights the text directly inside the PDF as it speaks.</p>
+        
+        <input type="file" id="pdfFile" accept="application/pdf" />
+        <button id="loadBtn" onclick="loadPDF()">1. Load PDF</button>
+        
+        <!-- Visible Page Controls -->
+        <div class="page-navigation">
+            <button id="prevBtn" onclick="prevPage()" disabled>◀</button>
+            <div class="page-info">
+                Page <input type="number" id="pageInput" min="1" value="1" onchange="jumpToPage()" disabled> of <span id="totalPages">?</span>
+            </div>
+            <button id="nextBtn" onclick="nextPage()" disabled>▶</button>
+        </div>
+        
+        <div class="playback-controls">
+            <button id="playBtn" onclick="playFromPage()" style="flex: 1; background: #10b981;" disabled>▶ Play Audio</button>
+            <button id="stopBtn" onclick="stopAudio()" style="flex: 1; background: #dc2626;" disabled>⏹ Stop</button>
+        </div>
+        
+        <audio id="player" controls></audio>
+        <div id="status">Waiting for file...</div>
+    </div>
+
+    <div class="viewer-wrapper" id="viewerContainer">
+        <div style="margin: auto; color: #aaa;" id="placeholder">No PDF selected</div>
+        <div class="pdf-page-container" id="pdfPageContainer" style="display: none;">
+            <canvas id="pdf-canvas"></canvas>
+            <div id="text-layer" class="textLayer"></div>
+        </div>
+    </div>
+
+    <script>
+        let pdfPages = [];
+        let currentPage = 1;
+        let isPlaying = false;
+        let audioBlobUrl = null;
+        
+        let pdfDoc = null;
+        let pdfWordSpans = [];
+        let currentHighlightIndex = -1; // Added to prevent blinking
+
+        const player = document.getElementById('player');
+        const status = document.getElementById('status');
+        const viewerContainer = document.getElementById('viewerContainer');
+        const pdfPageContainer = document.getElementById('pdfPageContainer');
+        const prevBtn = document.getElementById('prevBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        const pageInput = document.getElementById('pageInput');
+        const playBtn = document.getElementById('playBtn');
+        const stopBtn = document.getElementById('stopBtn');
+
+        // Automatically play next page
+        player.onended = () => {
+            if (isPlaying && currentPage < pdfPages.length) {
+                currentPage++;
+                updatePaginationUI();
+                generateAndPlay(currentPage);
+            } else {
+                isPlaying = false;
+                status.innerHTML = "✅ Finished playing document.";
+            }
+        };
+
+        player.addEventListener('timeupdate', () => {
+            if (!player.duration || !isFinite(player.duration) || pdfWordSpans.length === 0 || !isPlaying) return;
+            
+            // Non-linear approximation: Map audio time directly to character/word density
+            let progress = player.currentTime / player.duration;
+            progress = Math.max(0, Math.min(1, progress)); 
+            
+            // More accurate index tracking
+            const targetIndex = Math.floor(progress * pdfWordSpans.length);
+            const safeIndex = Math.max(0, Math.min(targetIndex, pdfWordSpans.length - 1));
+            
+            if (currentHighlightIndex === safeIndex) return; 
+            currentHighlightIndex = safeIndex;
+            
+            // Clear all previous highlights
+            pdfWordSpans.forEach(span => {
+                span.classList.remove('active-pdf-word');
+                if(span.parentElement) span.parentElement.classList.remove('active-pdf-sentence');
+            });
+            
+            // Apply new highlight
+            const currentWord = pdfWordSpans[safeIndex];
+            if (currentWord) {
+                currentWord.classList.add('active-pdf-word');
+                
+                // Also highlight surrounding context to make it more visible and act like a real read-along
+                if (currentWord.parentElement) {
+                    currentWord.parentElement.classList.add('active-pdf-sentence');
+                }
+                
+                // Highlight the next 2 words slightly so the eye can follow ahead (like a real teleprompter)
+                for(let i=1; i<=2; i++) {
+                    if (safeIndex + i < pdfWordSpans.length) {
+                         pdfWordSpans[safeIndex + i].classList.add('active-pdf-word');
+                    }
+                }
+                
+                const containerRect = viewerContainer.getBoundingClientRect();
+                const wordRect = currentWord.getBoundingClientRect();
+                
+                if (wordRect.bottom > containerRect.bottom - 50 || wordRect.top < containerRect.top + 50) {
+                    viewerContainer.scrollTo({
+                        top: viewerContainer.scrollTop + (wordRect.top - containerRect.top) - (containerRect.height / 2.5),
+                        behavior: 'smooth'
+                    });
+                }
+            }
+        });
+
+        function updatePaginationUI() {
+            pageInput.value = currentPage;
+            prevBtn.disabled = (currentPage <= 1 || pdfPages.length === 0);
+            nextBtn.disabled = (currentPage >= pdfPages.length || pdfPages.length === 0);
+        }
+
+        async function prevPage() {
+            if (currentPage > 1) {
+                currentPage--;
+                updatePaginationUI();
+                if (isPlaying) {
+                    await playFromPage();
+                } else {
+                    await renderPDFPage(currentPage);
+                }
+            }
+        }
+
+        async function nextPage() {
+            if (currentPage < pdfPages.length) {
+                currentPage++;
+                updatePaginationUI();
+                if (isPlaying) {
+                    await playFromPage();
+                } else {
+                    await renderPDFPage(currentPage);
+                }
+            }
+        }
+
+        async function jumpToPage() {
+            let reqPage = parseInt(pageInput.value);
+            if (isNaN(reqPage) || reqPage < 1) reqPage = 1;
+            if (reqPage > pdfPages.length) reqPage = pdfPages.length;
+            
+            currentPage = reqPage;
+            updatePaginationUI();
+            
+            if (isPlaying) {
+                await playFromPage();
+            } else {
+                await renderPDFPage(currentPage);
+            }
+        }
+
+        async function renderPDFPage(pageNum) {
+            if (!pdfDoc) return;
+            
+            // Reset state
+            currentHighlightIndex = -1;
+            
+            const page = await pdfDoc.getPage(pageNum);
+            
+            const scale = 1.8; 
+            const viewport = page.getViewport({ scale: scale });
+            const canvas = document.getElementById('pdf-canvas');
+            const ctx = canvas.getContext('2d');
+            
+            const outputScale = window.devicePixelRatio || 1;
+            
+            canvas.width = Math.floor(viewport.width * outputScale);
+            canvas.height = Math.floor(viewport.height * outputScale);
+            canvas.style.width = Math.floor(viewport.width) + "px";
+            canvas.style.height = Math.floor(viewport.height) + "px";
+            
+            pdfPageContainer.style.width = Math.floor(viewport.width) + "px";
+            pdfPageContainer.style.height = Math.floor(viewport.height) + "px";
+
+            const transform = outputScale !== 1 ? [outputScale, 0, 0, outputScale, 0, 0] : null;
+            
+            const renderContext = { canvasContext: ctx, transform: transform, viewport: viewport };
+            await page.render(renderContext).promise;
+            
+            const textContent = await page.getTextContent();
+            const textLayerDiv = document.getElementById('text-layer');
+            textLayerDiv.innerHTML = '';
+            
+            await pdfjsLib.renderTextLayer({
+                textContentSource: textContent,
+                container: textLayerDiv,
+                viewport: viewport,
+                textDivs: []
+            }).promise;
+            
+            pdfWordSpans = [];
+            const originalSpans = Array.from(textLayerDiv.querySelectorAll('span'));
+            
+            originalSpans.forEach(span => {
+                const text = span.textContent;
+                const words = text.split(/(\s+)/);
+                span.innerHTML = ''; 
+                
+                words.forEach(word => {
+                    if (word.trim().length === 0) {
+                        span.appendChild(document.createTextNode(word));
+                    } else {
+                        const wSpan = document.createElement('span');
+                        wSpan.textContent = word;
+                        wSpan.style.color = 'transparent'; 
+                        span.appendChild(wSpan);
+                        pdfWordSpans.push(wSpan); 
+                    }
+                });
+            });
+        }
+
+        async function loadPDF() {
+            const fileInput = document.getElementById('pdfFile');
+            const loadBtn = document.getElementById('loadBtn');
+            if (!fileInput.files[0]) return alert("Select a PDF first.");
+
+            loadBtn.disabled = true;
+            status.innerHTML = "⏳ Loading visual and extracting text...";
+            document.getElementById('placeholder').style.display = 'none';
+            document.getElementById('pdfPageContainer').style.display = 'block';
+
+            const arrayBuffer = await fileInput.files[0].arrayBuffer();
+            pdfDoc = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+            
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+            
+            try {
+                const res = await fetch('/extract', { method: 'POST', body: formData });
+                const data = await res.json();
+                
+                pdfPages = data.pages;
+                document.getElementById('totalPages').innerText = data.total_pages;
+                
+                currentPage = 1;
+                
+                // Enable controls
+                pageInput.disabled = false;
+                playBtn.disabled = false;
+                stopBtn.disabled = false;
+                updatePaginationUI();
+                
+                await renderPDFPage(currentPage);
+                
+                status.innerHTML = "✅ PDF Loaded! You can now view pages or play audio.";
+                loadBtn.disabled = false;
+            } catch (e) {
+                status.innerHTML = "❌ Error reading PDF.";
+                loadBtn.disabled = false;
+            }
+        }
+
+        async function playFromPage() {
+            if (pdfPages.length === 0) return alert("Load a PDF first.");
+            
+            isPlaying = true;
+            await renderPDFPage(currentPage); // Ensure visual is synced
+            generateAndPlay(currentPage);
+        }
+
+        function stopAudio() {
+            isPlaying = false;
+            player.pause();
+            status.innerHTML = "⏹ Stopped.";
+            document.querySelectorAll('.active-pdf-word').forEach(el => el.classList.remove('active-pdf-word'));
+            document.querySelectorAll('.active-pdf-sentence').forEach(el => el.classList.remove('active-pdf-sentence'));
+        }
+
+        async function generateAndPlay(pageNum) {
+            const text = pdfPages[pageNum - 1];
+            
+            if (!text || text.trim() === "") {
+                status.innerHTML = `⏭ Skipping empty page ${pageNum}...`;
+                player.dispatchEvent(new Event("ended"));
+                return;
+            }
+            
+            status.innerHTML = `⏳ Generating audio for Page ${pageNum}...`;
+            
+            try {
+                const res = await fetch('/synthesize', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({text: text})
+                });
+                
+                if (audioBlobUrl) URL.revokeObjectURL(audioBlobUrl);
+                const blob = await res.blob();
+                audioBlobUrl = URL.createObjectURL(blob);
+                
+                player.src = audioBlobUrl;
+                player.play();
+                status.innerHTML = `🔊 Playing Page ${pageNum}...`;
+            } catch (e) {
+                status.innerHTML = "❌ Audio generation failed.";
+                isPlaying = false;
+            }
+        }
+    </script>
+</body>
+</html>
