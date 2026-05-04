@@ -27,15 +27,26 @@ def read_root():
 
 @app.post("/extract")
 async def extract_pdf(file: UploadFile = File(...)):
-    # Read entire PDF and extract text page by page
+    # Extract per-page word boxes so the frontend can highlight + click
+    # the same tokens that get sent to the TTS engine.
     pdf_bytes = await file.read()
     doc = fitz.open(stream=pdf_bytes, filetype="pdf")
-    
+
     pages = []
     for page in doc:
-        text = page.get_text().replace('\n', ' ').strip()
-        pages.append(text)
-        
+        words_raw = page.get_text("words")  # (x0, y0, x1, y1, word, block, line, word_no)
+        words = [
+            {"x0": w[0], "y0": w[1], "x1": w[2], "y1": w[3], "text": w[4]}
+            for w in words_raw
+        ]
+        text = " ".join(w["text"] for w in words)
+        pages.append({
+            "text": text,
+            "words": words,
+            "width": page.rect.width,
+            "height": page.rect.height,
+        })
+
     return {"total_pages": len(pages), "pages": pages}
 
 @app.post("/synthesize")
