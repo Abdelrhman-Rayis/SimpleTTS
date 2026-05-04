@@ -5,3 +5,4 @@ models/
 *.mp3
 server.log
 .DS_Store
+desktop.log

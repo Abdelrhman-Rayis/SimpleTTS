@@ -3,795 +3,1066 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SimpleTTS — Continuous AI PDF Reader</title>
-
+    <title>SimpleTTS — AI PDF Reader</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-    <script>pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';</script>
-
+    <script>pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';</script>
     <style>
         :root {
-            --bg-soft: #f1f5f9;
-            --panel: #ffffff;
-            --panel-muted: #f8fafc;
-            --border: #e2e8f0;
-            --text: #0f172a;
-            --text-muted: #64748b;
-            --primary: #4f46e5;
-            --primary-hover: #4338ca;
-            --primary-soft: #eef2ff;
-            --success: #059669;
-            --success-hover: #047857;
-            --danger: #dc2626;
-            --danger-hover: #b91c1c;
-            --highlight: rgba(79, 70, 229, 0.32);
-            --highlight-line: rgba(253, 224, 71, 0.28);
-            --hover: rgba(79, 70, 229, 0.10);
-            --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.06);
-            --shadow-md: 0 4px 14px rgba(15, 23, 42, 0.08);
-            --radius: 10px;
-            --radius-sm: 6px;
+            --bg:          #f1f5f9;
+            --panel:       #ffffff;
+            --muted:       #f8fafc;
+            --border:      #e2e8f0;
+            --text:        #0f172a;
+            --subtle:      #64748b;
+            --primary:     #4f46e5;
+            --primary-h:   #4338ca;
+            --primary-s:   #eef2ff;
+            --ok:          #059669;
+            --ok-h:        #047857;
+            --stop:        #dc2626;
+            --stop-h:      #b91c1c;
+            --word-hl:     rgba(79,70,229,0.30);
+            --sent-hl:     rgba(253,224,71,0.25);
+            --hover-hl:    rgba(79,70,229,0.10);
+            --shadow:      0 4px 14px rgba(15,23,42,0.08);
+            --r:           10px;
+            --r-s:         6px;
         }
+        *{box-sizing:border-box}
+        html,body{height:100%}
+        body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+             margin:0;background:var(--bg);color:var(--text);font-size:14px;
+             line-height:1.5;display:flex;flex-direction:column;height:100vh;overflow:hidden}
 
-        * { box-sizing: border-box; }
-        html, body { height: 100%; }
+        /* ── Topbar ── */
+        .topbar{display:flex;align-items:center;justify-content:space-between;
+                padding:12px 20px;background:var(--panel);border-bottom:1px solid var(--border);
+                box-shadow:0 1px 3px rgba(15,23,42,.06);z-index:20;gap:12px}
+        .brand{display:flex;align-items:center;gap:10px;font-weight:700;font-size:1rem;letter-spacing:-.01em}
+        .brand-logo{width:28px;height:28px;border-radius:7px;
+                    background:linear-gradient(135deg,#6366f1,#4f46e5);
+                    display:grid;place-items:center;color:#fff;font-size:15px;flex-shrink:0}
+        .brand-sub{color:var(--subtle);font-weight:400;font-size:.82rem;margin-left:4px}
+        .topbar-right{display:flex;align-items:center;gap:8px;font-size:.8rem;color:var(--subtle)}
+        .btn-help{width:26px;height:26px;border-radius:50%;border:1px solid var(--border);
+                  background:var(--panel);cursor:pointer;font-size:.85rem;font-weight:700;
+                  color:var(--subtle);display:grid;place-items:center;transition:background .15s}
+        .btn-help:hover{background:var(--primary-s);color:var(--primary);border-color:var(--primary)}
 
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
-            margin: 0;
-            background: var(--bg-soft);
-            color: var(--text);
-            font-size: 14px;
-            line-height: 1.5;
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
-            overflow: hidden;
-        }
+        /* ── Layout ── */
+        .app{flex:1;display:flex;min-height:0}
+        .sidebar{width:330px;min-width:330px;background:var(--panel);border-right:1px solid var(--border);
+                 padding:18px;overflow-y:auto;display:flex;flex-direction:column;gap:16px}
 
-        /* ---------- Top bar ---------- */
-        .topbar {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 14px 22px;
-            background: var(--panel);
-            border-bottom: 1px solid var(--border);
-            box-shadow: var(--shadow-sm);
-            z-index: 20;
-        }
-        .topbar .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 1.05rem; letter-spacing: -0.01em; }
-        .topbar .brand .logo {
-            width: 30px; height: 30px;
-            border-radius: 8px;
-            background: linear-gradient(135deg, #6366f1, #4f46e5);
-            display: grid; place-items: center;
-            color: white; font-size: 16px;
-        }
-        .topbar .brand .sub { color: var(--text-muted); font-weight: 400; font-size: 0.85rem; margin-left: 6px; }
-        .topbar .meta { font-size: 0.8rem; color: var(--text-muted); }
+        /* ── Cards ── */
+        .card{background:var(--muted);border:1px solid var(--border);border-radius:var(--r);padding:13px}
+        .card h2{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;
+                 color:var(--subtle);margin:0 0 10px}
 
-        /* ---------- App layout ---------- */
-        .app { flex: 1; display: flex; min-height: 0; }
+        /* ── File drop ── */
+        .file-drop{display:block;border:1px dashed #cbd5e1;border-radius:var(--r-s);padding:13px;
+                   text-align:center;color:var(--subtle);background:var(--panel);cursor:pointer;
+                   transition:border-color .15s,background .15s}
+        .file-drop:hover{border-color:var(--primary);background:var(--primary-s);color:var(--primary)}
+        .file-drop input{display:none}
+        .fname{color:var(--text);font-weight:500;word-break:break-all}
 
-        .sidebar {
-            width: 340px; min-width: 340px;
-            background: var(--panel);
-            border-right: 1px solid var(--border);
-            padding: 20px;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-            gap: 18px;
-        }
+        /* ── Select ── */
+        select.sel{width:100%;margin-top:8px;padding:7px 10px;font-size:.88rem;
+                   border:1px solid var(--border);border-radius:var(--r-s);
+                   background:var(--panel);color:var(--text);font-family:inherit;cursor:pointer}
+        select.sel:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-s)}
+        select.sel:disabled{opacity:.5;cursor:default}
 
-        .panel {
-            background: var(--panel-muted);
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            padding: 14px;
-        }
-        .panel h2 {
-            font-size: 0.72rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.08em;
-            color: var(--text-muted);
-            margin: 0 0 10px 0;
-        }
+        /* ── Buttons ── */
+        .btn{display:inline-flex;align-items:center;justify-content:center;gap:5px;
+             background:var(--primary);color:#fff;border:none;padding:8px 13px;
+             border-radius:var(--r-s);font-size:.88rem;font-weight:600;cursor:pointer;
+             transition:background .15s,transform .05s;font-family:inherit}
+        .btn:hover:not(:disabled){background:var(--primary-h)}
+        .btn:active:not(:disabled){transform:translateY(1px)}
+        .btn:disabled{background:#c7d2fe;cursor:not-allowed}
+        .btn-block{width:100%;margin-top:8px}
+        .btn-ok{background:var(--ok)}.btn-ok:hover:not(:disabled){background:var(--ok-h)}.btn-ok:disabled{background:#a7f3d0}
+        .btn-stop{background:var(--stop)}.btn-stop:hover:not(:disabled){background:var(--stop-h)}.btn-stop:disabled{background:#fecaca}
+        .btn-ghost{background:var(--panel);color:var(--text);border:1px solid var(--border)}
+        .btn-ghost:hover:not(:disabled){background:var(--bg)}
+        .btn-ghost:disabled{color:#cbd5e1}
+        .btn-sq{width:36px;height:36px;padding:0;border-radius:var(--r-s)}
 
-        /* ---------- File input ---------- */
-        .file-drop {
-            display: block;
-            border: 1px dashed #cbd5e1;
-            border-radius: var(--radius-sm);
-            padding: 14px;
-            text-align: center;
-            color: var(--text-muted);
-            background: var(--panel);
-            cursor: pointer;
-            transition: border-color 0.15s, background 0.15s;
-        }
-        .file-drop:hover { border-color: var(--primary); background: var(--primary-soft); color: var(--primary); }
-        .file-drop input { display: none; }
-        .file-drop .fname { color: var(--text); font-weight: 500; word-break: break-all; }
+        /* ── Pager ── */
+        .pager{display:grid;grid-template-columns:36px 1fr 36px;align-items:center;gap:8px}
+        .pageinfo{display:flex;align-items:center;justify-content:center;gap:5px;
+                  color:var(--subtle);font-size:.86rem}
+        .pageinfo input{width:52px;padding:5px 8px;text-align:center;border:1px solid var(--border);
+                        border-radius:var(--r-s);font-weight:600;font-family:inherit;font-size:.88rem;
+                        background:var(--panel)}
+        .pageinfo input:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-s)}
 
-        /* ---------- Buttons ---------- */
-        .btn {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 6px;
-            background: var(--primary);
-            color: white;
-            border: none;
-            padding: 9px 14px;
-            border-radius: var(--radius-sm);
-            font-size: 0.9rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: background 0.15s, transform 0.05s;
-            font-family: inherit;
-        }
-        .btn:hover:not(:disabled) { background: var(--primary-hover); }
-        .btn:active:not(:disabled) { transform: translateY(1px); }
-        .btn:disabled { background: #c7d2fe; cursor: not-allowed; }
-        .btn-block { width: 100%; }
+        /* ── Transport ── */
+        .transport{display:flex;gap:8px}
+        .transport .btn{flex:1}
 
-        .btn-success { background: var(--success); } .btn-success:hover:not(:disabled){background:var(--success-hover);} .btn-success:disabled{background:#a7f3d0;}
-        .btn-danger  { background: var(--danger);  } .btn-danger:hover:not(:disabled){background:var(--danger-hover);}  .btn-danger:disabled{background:#fecaca;}
+        /* ── Rate row ── */
+        .rate-row{display:flex;align-items:center;gap:8px;margin-top:10px}
+        .rate-row label{font-size:.8rem;color:var(--subtle);white-space:nowrap;width:42px}
+        .rate-row input[type=range]{flex:1;accent-color:var(--primary)}
+        .rate-val{font-size:.82rem;font-weight:600;color:var(--primary);white-space:nowrap;width:38px;text-align:right}
 
-        .btn-ghost {
-            background: var(--panel); color: var(--text); border: 1px solid var(--border);
-        }
-        .btn-ghost:hover:not(:disabled) { background: var(--bg-soft); }
-        .btn-ghost:disabled { color: #cbd5e1; background: var(--panel); }
-        .btn-icon { width: 38px; height: 38px; padding: 0; border-radius: var(--radius-sm); }
+        /* ── Audio element ── */
+        #player{width:100%;margin-top:10px;outline:none}
 
-        /* ---------- Page navigation ---------- */
-        .pager {
-            display: grid;
-            grid-template-columns: auto 1fr auto;
-            align-items: center;
-            gap: 8px;
-        }
-        .pager .pageinfo { display: flex; align-items: center; justify-content: center; gap: 6px; color: var(--text-muted); font-size: 0.88rem; }
-        .pager input[type="number"] {
-            width: 56px; padding: 6px 8px; font-size: 0.9rem; text-align: center;
-            border: 1px solid var(--border); border-radius: var(--radius-sm);
-            font-weight: 600; color: var(--text); background: var(--panel); font-family: inherit;
-        }
-        .pager input[type="number"]:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-soft); }
+        /* ── Hint ── */
+        .hint{font-size:.76rem;color:var(--subtle);margin-top:8px;line-height:1.4}
 
-        /* ---------- Playback ---------- */
-        .transport { display: flex; gap: 8px; }
-        .transport .btn { flex: 1; }
-        #player { width: 100%; margin-top: 10px; outline: none; }
+        /* ── Status pill ── */
+        .status{display:flex;align-items:center;gap:8px;padding:9px 12px;border-radius:var(--r-s);
+                font-size:.83rem;color:var(--subtle);background:var(--panel);
+                border:1px solid var(--border);min-height:38px}
+        .status .dot{width:7px;height:7px;border-radius:50%;background:#cbd5e1;flex-shrink:0}
+        .status.busy .dot{background:var(--primary);animation:pulse 1.4s infinite}
+        .status.ok   .dot{background:var(--ok)}
+        .status.err  .dot{background:var(--stop)}
+        @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
 
-        .hint {
-            font-size: 0.78rem;
-            color: var(--text-muted);
-            margin-top: 8px;
-            line-height: 1.4;
-        }
+        /* Progress ring (shown while generating) */
+        .ring{width:22px;height:22px;flex-shrink:0;display:none;transform:rotate(-90deg)}
+        .ring circle{fill:none;stroke-width:3;stroke-linecap:round}
+        .ring .bg{stroke:var(--border)}
+        .ring .fg{stroke:var(--primary);stroke-dasharray:60.32;stroke-dashoffset:60.32;
+                  transition:stroke-dashoffset .1s linear}
+        .pct{display:none;font-size:.72rem;font-weight:700;color:var(--primary);min-width:28px}
+        .status.gen .dot{display:none}
+        .status.gen .ring,
+        .status.gen .pct{display:inline-block}
 
-        /* ---------- Status ---------- */
-        .status {
-            display: flex; align-items: center; gap: 8px;
-            padding: 10px 12px; border-radius: var(--radius-sm);
-            font-size: 0.85rem; color: var(--text-muted);
-            background: var(--panel); border: 1px solid var(--border); min-height: 40px;
-        }
-        .status .dot { width: 8px; height: 8px; border-radius: 50%; background: #cbd5e1; flex-shrink: 0; }
-        .status.busy .dot { background: var(--primary); animation: pulse 1.4s infinite; }
-        .status.ok   .dot { background: var(--success); }
-        .status.err  .dot { background: var(--danger); }
-        @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.35; } }
+        /* ── Viewer ── */
+        .viewer{flex:1;background:#dde1e9;overflow:auto;display:flex;
+                align-items:flex-start;justify-content:center;
+                position:relative;padding:24px}
+        .viewer.drag-over{outline:2px dashed var(--primary);outline-offset:-4px;background:rgba(79,70,229,.04)}
+        .placeholder{margin:auto;color:#94a3b8;text-align:center;font-size:.95rem}
+        .placeholder .ico{font-size:2.5rem;display:block;margin-bottom:8px;opacity:.5}
 
-        /* ---------- PDF viewer ---------- */
-        .viewer-wrapper {
-            flex: 1; background: #e2e8f0; overflow: auto;
-            display: flex; align-items: flex-start; justify-content: center;
-            position: relative; padding: 24px;
-        }
-        .placeholder { margin: auto; color: #94a3b8; text-align: center; font-size: 0.95rem; }
-        .placeholder .big { font-size: 2.5rem; display: block; margin-bottom: 8px; opacity: 0.6; }
+        .page-wrap{position:relative;background:#fff;margin:0 auto;
+                   box-shadow:0 6px 24px rgba(15,23,42,.16);border-radius:3px;overflow:hidden}
+        #pdf-canvas{display:block}
 
-        .pdf-page-container {
-            position: relative; background: white; margin: 0 auto;
-            box-shadow: 0 6px 22px rgba(15, 23, 42, 0.15); border-radius: 4px;
-            overflow: hidden;
-        }
-        #pdf-canvas { display: block; }
+        /* ── Word overlay ── */
+        #word-layer{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:auto}
+        .word-box{position:absolute;color:transparent;cursor:pointer;border-radius:2px;
+                  line-height:1;user-select:none;transition:background-color .06s ease-out}
+        .word-box:hover{background-color:var(--hover-hl)}
+        .word-box.hl-word{background-color:var(--word-hl)!important}
+        .word-box.hl-sent{background-color:var(--sent-hl)}
+        .word-box.skip-word{opacity:.35;cursor:default}
 
-        /* Word-box overlay: positioned exactly over each word from PyMuPDF */
-        #word-layer {
-            position: absolute; top: 0; left: 0;
-            width: 100%; height: 100%;
-            pointer-events: auto;
-        }
-        .word-box {
-            position: absolute;
-            color: transparent;
-            cursor: pointer;
-            border-radius: 2px;
-            line-height: 1;
-            user-select: none;
-            transition: background-color 0.08s ease-out;
-        }
-        .word-box:hover { background-color: var(--hover); }
-        .word-box.active-pdf-word { background-color: var(--highlight) !important; }
+        /* ── Toast ── */
+        .toast{position:absolute;bottom:20px;left:50%;transform:translateX(-50%);
+               background:var(--text);color:#fff;padding:10px 14px;
+               border-radius:var(--r);display:flex;align-items:center;gap:10px;
+               font-size:.85rem;box-shadow:var(--shadow);z-index:40;white-space:nowrap}
+        .toast button{background:rgba(255,255,255,.2);border:none;color:#fff;
+                      padding:4px 10px;border-radius:4px;cursor:pointer;font-size:.78rem;font-family:inherit}
+        .toast button:hover{background:rgba(255,255,255,.35)}
 
-        /* ---------- Responsive ---------- */
-        @media (max-width: 900px) {
-            body { overflow: auto; height: auto; }
-            .app { flex-direction: column; }
-            .sidebar { width: 100%; min-width: 0; border-right: none; border-bottom: 1px solid var(--border); }
-            .viewer-wrapper { padding: 14px; }
+        /* ── Help modal ── */
+        .modal-bg{position:fixed;inset:0;background:rgba(15,23,42,.5);
+                  display:grid;place-items:center;z-index:100;backdrop-filter:blur(2px)}
+        .modal{background:var(--panel);border-radius:var(--r);padding:24px;
+               min-width:280px;box-shadow:0 20px 60px rgba(15,23,42,.25)}
+        .modal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+        .modal-header h3{margin:0;font-size:.95rem}
+        .modal-header button{background:none;border:none;cursor:pointer;font-size:1rem;color:var(--subtle);padding:2px 6px}
+        .modal-header button:hover{color:var(--text)}
+        .kb{border-collapse:collapse;width:100%}
+        .kb td{padding:6px 10px;font-size:.84rem;border-top:1px solid var(--border)}
+        .kb tr:first-child td{border-top:none}
+        .kb td:first-child{font-family:ui-monospace,monospace;background:var(--muted);border-radius:4px;
+                           color:var(--primary);font-weight:600;text-align:center;white-space:nowrap;width:90px}
+
+        /* ── Responsive ── */
+        @media(max-width:900px){
+            body{overflow:auto;height:auto}
+            .app{flex-direction:column}
+            .sidebar{width:100%;min-width:0;border-right:none;border-bottom:1px solid var(--border)}
+            .viewer{padding:14px}
         }
     </style>
 </head>
 <body>
 
-    <header class="topbar">
-        <div class="brand">
-            <div class="logo">📖</div>
-            <div>SimpleTTS <span class="sub">— continuous AI PDF reader</span></div>
-        </div>
-        <div class="meta">Local Piper TTS · PDF.js</div>
-    </header>
-
-    <div class="app">
-        <aside class="sidebar">
-
-            <div class="panel">
-                <h2>Document</h2>
-                <label class="file-drop" id="fileDropLabel">
-                    <input type="file" id="pdfFile" accept="application/pdf" />
-                    <div id="fileDropText">Click to choose a PDF…</div>
-                </label>
-                <div style="height: 10px;"></div>
-                <button class="btn btn-block" id="loadBtn" onclick="loadPDF()" disabled>Load PDF</button>
-            </div>
-
-            <div class="panel">
-                <h2>Navigation</h2>
-                <div class="pager">
-                    <button class="btn btn-ghost btn-icon" id="prevBtn" onclick="prevPage()" disabled aria-label="Previous page">◀</button>
-                    <div class="pageinfo">
-                        Page <input type="number" id="pageInput" min="1" value="1" onchange="jumpToPage()" disabled>
-                        <span>of</span>
-                        <span id="totalPages">—</span>
-                    </div>
-                    <button class="btn btn-ghost btn-icon" id="nextBtn" onclick="nextPage()" disabled aria-label="Next page">▶</button>
-                </div>
-            </div>
-
-            <div class="panel">
-                <h2>Playback</h2>
-                <div class="transport">
-                    <button class="btn btn-success" id="playBtn" onclick="playFromPage()" disabled>▶ Play</button>
-                    <button class="btn btn-danger"  id="stopBtn" onclick="stopAudio()"   disabled>⏹ Stop</button>
-                </div>
-                <audio id="player" controls></audio>
-                <div class="hint">Tip: click any word in the PDF to start reading from there.</div>
-            </div>
-
-            <div class="status" id="status">
-                <span class="dot"></span>
-                <span id="statusText">Waiting for file…</span>
-            </div>
-        </aside>
-
-        <main class="viewer-wrapper" id="viewerContainer">
-            <div class="placeholder" id="placeholder">
-                <span class="big">📄</span>
-                No PDF loaded
-            </div>
-            <div class="pdf-page-container" id="pdfPageContainer" style="display: none;">
-                <canvas id="pdf-canvas"></canvas>
-                <div id="word-layer"></div>
-            </div>
-        </main>
+<header class="topbar">
+    <div class="brand">
+        <div class="brand-logo">📖</div>
+        SimpleTTS<span class="brand-sub">— AI PDF reader</span>
     </div>
+    <div class="topbar-right">
+        <span>Local Piper · PDF.js</span>
+        <button class="btn-help" onclick="showHelp()" title="Keyboard shortcuts (?)">?</button>
+    </div>
+</header>
 
-    <script>
-        /* ---------------- State ----------------
-         * pdfPages    : array of pages from backend; each is { text, words[], width, height }
-         * pdfDoc      : PDF.js document, used only for canvas rendering
-         * wordBoxes   : DOM nodes for the words on the *current* page (one per word)
-         *
-         * Playback model:
-         *   Each /synthesize call corresponds to a contiguous range of words
-         *   on a single page: [playStartIdx .. words.length).  We weight each
-         *   word by its character length (+ punctuation pause weight) and map
-         *   audio progress -> cumulative-char position -> word index.  This
-         *   keeps the highlight aligned even when Piper inserts pauses.
-         */
-        let pdfPages = [];
-        let pdfDoc = null;
-        let currentPage = 1;
-        let isPlaying = false;
-        let audioBlobUrl = null;
+<div class="app">
+    <aside class="sidebar">
 
-        let wordBoxes = [];        // span elements (length === pdfPages[currentPage-1].words.length)
-        let playStartIdx = 0;      // index of first spoken word in current audio
-        let activeOffsets = [];    // cumulative weight per spoken word
-        let activeTotal = 0;
-        let currentHighlightIndex = -1;
-        let highlightWindow = [];
-        // Speech window inside the audio file, measured by silence detection.
-        // Defaults of 0/0 mean "use full duration".
-        let speechStart = 0;
-        let speechEnd = 0;
-        let internalGaps = [];        // [{start, end}] silent regions inside [speechStart, speechEnd]
-        let speechOnlyDuration = 0;   // total speaking time, gaps removed (0 = unknown)
-        let audioCtx = null;
-        let rafHandle = null;
+        <div class="card">
+            <h2>Document</h2>
+            <label class="file-drop">
+                <input type="file" id="pdfFile" accept="application/pdf">
+                <div id="dropLabel">Click to choose a PDF…</div>
+            </label>
+            <select id="voiceSelect" class="sel" title="TTS voice"></select>
+            <button class="btn btn-block" id="loadBtn" onclick="loadPDF()" disabled>Load PDF</button>
+        </div>
 
-        const player = document.getElementById('player');
-        const statusEl = document.getElementById('status');
-        const statusText = document.getElementById('statusText');
-        const viewerContainer = document.getElementById('viewerContainer');
-        const pdfPageContainer = document.getElementById('pdfPageContainer');
-        const wordLayer = document.getElementById('word-layer');
-        const placeholder = document.getElementById('placeholder');
-        const prevBtn = document.getElementById('prevBtn');
-        const nextBtn = document.getElementById('nextBtn');
-        const pageInput = document.getElementById('pageInput');
-        const playBtn = document.getElementById('playBtn');
-        const stopBtn = document.getElementById('stopBtn');
-        const loadBtn = document.getElementById('loadBtn');
-        const fileInput = document.getElementById('pdfFile');
-        const fileDropText = document.getElementById('fileDropText');
+        <div class="card">
+            <h2>Navigation</h2>
+            <div class="pager">
+                <button class="btn btn-ghost btn-sq" id="prevBtn" onclick="prevPage()" disabled>◀</button>
+                <div class="pageinfo">
+                    p.<input type="number" id="pageInput" min="1" value="1" onchange="jumpToPage()" disabled>
+                    / <span id="totalPages">—</span>
+                </div>
+                <button class="btn btn-ghost btn-sq" id="nextBtn" onclick="nextPage()" disabled>▶</button>
+            </div>
+        </div>
 
-        /* ---------------- Status ---------------- */
-        function setStatus(msg, kind = '') {
-            statusText.textContent = msg;
-            statusEl.classList.remove('busy', 'ok', 'err');
-            if (kind) statusEl.classList.add(kind);
-        }
+        <div class="card">
+            <h2>Playback</h2>
+            <div class="transport">
+                <button class="btn btn-ok"   id="playBtn" onclick="playFromPage()" disabled>▶ Play</button>
+                <button class="btn btn-stop" id="stopBtn" onclick="stopAudio()"    disabled>⏹ Stop</button>
+            </div>
+            <div class="rate-row">
+                <label>Speed</label>
+                <input type="range" id="rateSlider" min="0.75" max="1.5" step="0.05" value="1">
+                <span class="rate-val" id="rateDisplay">1.00×</span>
+            </div>
+            <audio id="player" controls></audio>
+            <div class="hint">Click any word in the PDF to start reading from there.</div>
+        </div>
 
-        /* ---------------- File input ---------------- */
-        fileInput.addEventListener('change', () => {
-            const f = fileInput.files[0];
-            if (f) {
-                fileDropText.innerHTML = `<span class="fname">${f.name}</span>`;
-                loadBtn.disabled = false;
-            } else {
-                fileDropText.textContent = 'Click to choose a PDF…';
-                loadBtn.disabled = true;
-            }
+        <div class="status" id="statusEl">
+            <span class="dot"></span>
+            <svg class="ring" viewBox="0 0 24 24">
+                <circle class="bg" cx="12" cy="12" r="9.6"></circle>
+                <circle class="fg" cx="12" cy="12" r="9.6"></circle>
+            </svg>
+            <span class="pct" id="pctTxt">0%</span>
+            <span id="statusTxt">Waiting for file…</span>
+        </div>
+
+    </aside>
+
+    <main class="viewer" id="viewer">
+        <div class="placeholder" id="placeholder"><span class="ico">📄</span>No PDF loaded</div>
+        <div class="page-wrap" id="pageWrap" style="display:none">
+            <canvas id="pdf-canvas"></canvas>
+            <div id="word-layer"></div>
+        </div>
+        <div class="toast" id="toast" style="display:none">
+            <span id="toastMsg"></span>
+            <button onclick="resumePlayback()">Resume</button>
+            <button onclick="dismissToast()">✕</button>
+        </div>
+    </main>
+</div>
+
+<!-- Help modal -->
+<div class="modal-bg" id="helpModal" style="display:none" onclick="if(event.target===this)closeHelp()">
+    <div class="modal">
+        <div class="modal-header">
+            <h3>Keyboard shortcuts</h3>
+            <button onclick="closeHelp()">✕</button>
+        </div>
+        <table class="kb">
+            <tr><td>Space</td><td>Play / Pause</td></tr>
+            <tr><td>← →</td><td>Previous / next page</td></tr>
+            <tr><td>↑ ↓</td><td>Speed +/− 0.1×</td></tr>
+            <tr><td>S / Esc</td><td>Stop & clear</td></tr>
+            <tr><td>?</td><td>This screen</td></tr>
+        </table>
+    </div>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════════════
+   State
+═══════════════════════════════════════════════════════ */
+let pdfPages   = [];        // [{text, words, width, height}]
+let pdfDoc     = null;
+let currentPage   = 1;
+let isPlaying     = false;
+let audioBlobUrl  = null;
+let currentFileName = '';
+let currentFileSize = 0;
+
+// Current-page word data
+let wordBoxes        = [];   // all word spans (fullIdx → span)
+let speakable        = [];   // spans for non-skip words
+let speakMap         = [];   // speakIdx → fullIdx
+let sentenceRanges   = [];   // over speakable indices
+
+// Playback position
+let playStartIdx      = 0;   // speakable index
+let activeOffsets     = [];  // cumulative weight for current spoken range
+let activeTotal       = 0;
+
+// Highlight tracking
+let currentHLIdx    = -1;
+let hlWord          = [];
+let hlSent          = [];
+
+// Silence window
+let speechStart         = 0;
+let speechEnd           = 0;
+let internalGaps        = [];
+let speechOnlyDuration  = 0;
+
+// Pre-fetch
+let prefetchState = null;   // {page, blob, win} | null
+
+// Audio context (lazy)
+let audioCtx  = null;
+let rafHandle = null;
+
+// Playback rate
+let playbackRate = 1.0;
+
+// Selected voice — { name, engine }
+let selectedVoice = { name: '', engine: 'piper' };
+
+// Resume toast
+let toastTimer    = null;
+let savedProgress = null;
+
+/* ═══════════════════════════════════════════════════════
+   DOM refs
+═══════════════════════════════════════════════════════ */
+const player      = document.getElementById('player');
+const statusEl    = document.getElementById('statusEl');
+const statusTxt   = document.getElementById('statusTxt');
+const viewer      = document.getElementById('viewer');
+const pageWrap    = document.getElementById('pageWrap');
+const placeholder = document.getElementById('placeholder');
+const wordLayer   = document.getElementById('word-layer');
+const prevBtn     = document.getElementById('prevBtn');
+const nextBtn     = document.getElementById('nextBtn');
+const pageInput   = document.getElementById('pageInput');
+const playBtn     = document.getElementById('playBtn');
+const stopBtn     = document.getElementById('stopBtn');
+const loadBtn     = document.getElementById('loadBtn');
+const fileInput   = document.getElementById('pdfFile');
+const dropLabel   = document.getElementById('dropLabel');
+const rateSlider  = document.getElementById('rateSlider');
+const rateDisplay = document.getElementById('rateDisplay');
+
+/* ═══════════════════════════════════════════════════════
+   Status + progress ring
+═══════════════════════════════════════════════════════ */
+function setStatus(msg, kind = '') {
+    statusTxt.textContent = msg;
+    statusEl.classList.remove('busy','ok','err');
+    if (kind) statusEl.classList.add(kind);
+}
+
+const RING_C = 60.32;          // 2 * pi * 9.6
+const ringFg = document.querySelector('.ring .fg');
+const pctTxt = document.getElementById('pctTxt');
+
+let progressRaf  = null;
+let progressEta  = 0;
+let progressT0   = 0;
+
+function ringSet(p) {
+    p = Math.max(0, Math.min(100, p));
+    ringFg.style.strokeDashoffset = (RING_C * (1 - p/100)).toFixed(2);
+    pctTxt.textContent = Math.floor(p) + '%';
+}
+
+function progressStart(text, engine) {
+    // Per-engine throughput estimate (chars/sec on this hardware).
+    // Kokoro is slower; first call also includes one-time pipeline warm-up.
+    const cps = engine === 'piper' ? 60 : 28;
+    const warm = (engine !== 'piper' && !window._kokoroWarmed) ? 8 : 0;
+    progressEta = Math.max(1.5, text.length / cps + warm);
+    progressT0  = performance.now();
+    statusEl.classList.add('gen');
+    ringSet(0);
+    cancelAnimationFrame(progressRaf);
+    const tick = () => {
+        const elapsed = (performance.now() - progressT0) / 1000;
+        ringSet(Math.min(95, (elapsed / progressEta) * 100));
+        progressRaf = requestAnimationFrame(tick);
+    };
+    progressRaf = requestAnimationFrame(tick);
+}
+
+function progressDone(engine) {
+    cancelAnimationFrame(progressRaf); progressRaf = null;
+    ringSet(100);
+    if (engine !== 'piper') window._kokoroWarmed = true;
+    setTimeout(() => statusEl.classList.remove('gen'), 250);
+}
+
+function progressHide() {
+    cancelAnimationFrame(progressRaf); progressRaf = null;
+    statusEl.classList.remove('gen');
+}
+
+/* ═══════════════════════════════════════════════════════
+   Voices
+═══════════════════════════════════════════════════════ */
+async function loadVoices() {
+    const sel = document.getElementById('voiceSelect');
+    sel.innerHTML = '';
+    let voices = [];
+    try {
+        const data = await fetch('/voices').then(r => r.json());
+        voices = data.voices || [];
+    } catch (_) { /* no /voices */ }
+
+    if (!voices.length) {
+        sel.innerHTML = '<option>Default</option>';
+        sel.style.display = 'none';
+        selectedVoice = { name: '', engine: 'piper' };
+        return;
+    }
+
+    // Group by engine so Piper and Voxtral show as separate sections.
+    const groups = {};
+    voices.forEach(v => {
+        const eng = v.engine || 'piper';
+        (groups[eng] = groups[eng] || []).push(v);
+    });
+    const labelFor = eng => ({piper:'Piper (fast)', kokoro:'Kokoro (premium)'}[eng] || eng);
+
+    Object.keys(groups).forEach(eng => {
+        const og = document.createElement('optgroup');
+        og.label = labelFor(eng);
+        groups[eng].forEach(v => {
+            const o = document.createElement('option');
+            o.value = JSON.stringify({ name: v.name, engine: eng });
+            o.textContent = v.label || v.name;
+            og.appendChild(o);
         });
+        sel.appendChild(og);
+    });
 
-        /* ---------------- Word weighting ----------------
-         * Pure character-length weighting. Inter-sentence and inter-clause
-         * pauses are removed from progress by silence detection below, so
-         * we don't add extra weight for punctuation here (would double-count).
-         */
-        function weightForWord(text) {
-            return text.length + 1; // +1 for the inter-word space
+    // Default: first Piper voice if available, else first overall.
+    const def = (groups.piper && groups.piper[0]) || voices[0];
+    selectedVoice = { name: def.name, engine: def.engine || 'piper' };
+    sel.value = JSON.stringify(selectedVoice);
+
+    // Hide picker if there's literally one option total.
+    if (voices.length === 1) sel.style.display = 'none';
+}
+
+document.getElementById('voiceSelect').addEventListener('change', e => {
+    try { selectedVoice = JSON.parse(e.target.value); }
+    catch (_) { selectedVoice = { name: e.target.value, engine: 'piper' }; }
+    prefetchState = null;
+});
+
+/* ═══════════════════════════════════════════════════════
+   File input + drag-and-drop
+═══════════════════════════════════════════════════════ */
+fileInput.addEventListener('change', () => {
+    const f = fileInput.files[0];
+    if (f) { dropLabel.innerHTML = `<span class="fname">${f.name}</span>`; loadBtn.disabled = false; }
+});
+
+viewer.addEventListener('dragover',  e => { e.preventDefault(); viewer.classList.add('drag-over'); });
+viewer.addEventListener('dragleave', e => { if (!viewer.contains(e.relatedTarget)) viewer.classList.remove('drag-over'); });
+viewer.addEventListener('drop', async e => {
+    e.preventDefault();
+    viewer.classList.remove('drag-over');
+    const f = e.dataTransfer.files[0];
+    if (f && f.type === 'application/pdf') {
+        dropLabel.innerHTML = `<span class="fname">${f.name}</span>`;
+        loadBtn.disabled = false;
+        await loadPDF(f);
+    }
+});
+
+/* ═══════════════════════════════════════════════════════
+   Rate slider
+═══════════════════════════════════════════════════════ */
+rateSlider.addEventListener('input', () => {
+    playbackRate = parseFloat(rateSlider.value);
+    rateDisplay.textContent = playbackRate.toFixed(2) + '×';
+    player.playbackRate = playbackRate;
+});
+function changeRate(delta) {
+    playbackRate = Math.max(0.75, Math.min(1.5, Math.round((playbackRate + delta) * 20) / 20));
+    rateSlider.value = playbackRate;
+    rateDisplay.textContent = playbackRate.toFixed(2) + '×';
+    player.playbackRate = playbackRate;
+}
+player.addEventListener('play', () => { player.playbackRate = playbackRate; });
+
+/* ═══════════════════════════════════════════════════════
+   Word weighting
+═══════════════════════════════════════════════════════ */
+function wordWeight(text) { return text.length + 1; }
+
+function buildOffsets(startIdx) {
+    activeOffsets = [];
+    activeTotal   = 0;
+    for (let i = startIdx; i < speakable.length; i++) {
+        const fullIdx = speakMap[i];
+        const w = pdfPages[currentPage - 1].words[fullIdx];
+        activeTotal += wordWeight(w.text);
+        activeOffsets.push(activeTotal);
+    }
+}
+
+function bsearch(target) {
+    let lo = 0, hi = activeOffsets.length - 1;
+    while (lo < hi) {
+        const mid = (lo + hi) >> 1;
+        if (activeOffsets[mid] < target) lo = mid + 1; else hi = mid;
+    }
+    return lo;
+}
+
+/* ═══════════════════════════════════════════════════════
+   Sentence ranges (over speakable word indices)
+═══════════════════════════════════════════════════════ */
+function computeSentences(words) {
+    const ranges = [];
+    let start = 0;
+    for (let i = 0; i < words.length; i++) {
+        const c = words[i].text.slice(-1);
+        if (c === '.' || c === '!' || c === '?') {
+            ranges.push({ start, end: i });
+            start = i + 1;
+        }
+    }
+    if (start < words.length) ranges.push({ start, end: words.length - 1 });
+    return ranges;
+}
+
+/* ═══════════════════════════════════════════════════════
+   Highlight
+═══════════════════════════════════════════════════════ */
+function clearHighlights() {
+    for (const s of hlWord) s.classList.remove('hl-word');
+    for (const s of hlSent) s.classList.remove('hl-sent');
+    hlWord = []; hlSent = [];
+}
+
+function applyHighlight(speakIdx) {
+    clearHighlights();
+    const fullIdx = speakMap[speakIdx];
+    if (fullIdx == null) return;
+    const box = wordBoxes[fullIdx];
+    if (!box) return;
+
+    box.classList.add('hl-word');
+    hlWord.push(box);
+
+    // Sentence band
+    for (const r of sentenceRanges) {
+        if (speakIdx >= r.start && speakIdx <= r.end) {
+            for (let i = r.start; i <= r.end; i++) {
+                const b = wordBoxes[speakMap[i]];
+                if (b) { b.classList.add('hl-sent'); hlSent.push(b); }
+            }
+            break;
+        }
+    }
+
+    // Auto-scroll
+    const cr = viewer.getBoundingClientRect();
+    const wr = box.getBoundingClientRect();
+    if (wr.bottom > cr.bottom - 60 || wr.top < cr.top + 60) {
+        viewer.scrollTo({ top: viewer.scrollTop + (wr.top - cr.top) - cr.height / 2.5, behavior: 'smooth' });
+    }
+}
+
+/* ═══════════════════════════════════════════════════════
+   Silence detection
+═══════════════════════════════════════════════════════ */
+function getAudioCtx() {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    return audioCtx;
+}
+
+async function detectSpeechWindow(blob) {
+    try {
+        const buf     = await blob.arrayBuffer();
+        const decoded = await getAudioCtx().decodeAudioData(buf.slice(0));
+        const data    = decoded.getChannelData(0);
+        const sr      = decoded.sampleRate;
+        const total   = decoded.duration;
+        const win     = Math.max(1, Math.floor(sr * 0.02));
+        const thresh  = 0.018;
+        const minGap  = 0.08;
+
+        // Build silence mask (20 ms windows)
+        const mask = [];
+        for (let i = 0; i + win <= data.length; i += win) {
+            let peak = 0;
+            for (let j = 0; j < win; j++) { const v = Math.abs(data[i+j]); if (v > peak) peak = v; }
+            mask.push(peak < thresh);
         }
 
-        function buildOffsets(words, startIdx) {
-            activeOffsets = [];
-            activeTotal = 0;
-            for (let i = startIdx; i < words.length; i++) {
-                activeTotal += weightForWord(words[i].text);
-                activeOffsets.push(activeTotal);
+        // Coalesce into gap list
+        const gaps = [];
+        let inG = false, gs = 0;
+        for (let k = 0; k < mask.length; k++) {
+            if (mask[k] && !inG)        { gs = k; inG = true; }
+            else if (!mask[k] && inG)   {
+                const s = (gs * win) / sr, e = (k * win) / sr;
+                if (e - s >= minGap) gaps.push({start:s, end:e});
+                inG = false;
             }
         }
+        if (inG) { const s = (gs * win) / sr; if (total - s >= minGap) gaps.push({start:s, end:total}); }
 
-        function findLocalWordIndex(targetWeight) {
-            // Binary search: smallest i s.t. activeOffsets[i] >= targetWeight.
-            let lo = 0, hi = activeOffsets.length - 1;
-            while (lo < hi) {
-                const mid = (lo + hi) >> 1;
-                if (activeOffsets[mid] < targetWeight) lo = mid + 1;
-                else hi = mid;
-            }
-            return lo;
-        }
+        let sStart = 0, sEnd = total;
+        if (gaps.length && gaps[0].start <= 0.01)                           { sStart = gaps[0].end;       gaps.shift(); }
+        if (gaps.length && gaps[gaps.length-1].end >= total - 0.01)         { sEnd   = gaps.pop().start; }
 
-        /* ---------------- Highlight ---------------- */
-        function clearHighlights() {
-            for (const s of highlightWindow) {
-                s.classList.remove('active-pdf-word');
-            }
-            highlightWindow = [];
-        }
+        const internal  = gaps.filter(g => g.start >= sStart && g.end <= sEnd);
+        const gapTime   = internal.reduce((a, g) => a + (g.end - g.start), 0);
+        const speechOnly = Math.max(0, (sEnd - sStart) - gapTime);
 
-        function applyHighlight(globalIdx) {
-            clearHighlights();
-            const main = wordBoxes[globalIdx];
-            if (!main) return;
-            main.classList.add('active-pdf-word');
-            highlightWindow.push(main);
+        return { start: Math.max(0, sStart - 0.02), end: Math.min(total, sEnd + 0.05), internal, speechOnly };
+    } catch(e) {
+        return { start:0, end:0, internal:[], speechOnly:0 };
+    }
+}
 
-            // Auto-scroll if the active word leaves the visible region.
-            const containerRect = viewerContainer.getBoundingClientRect();
-            const wordRect = main.getBoundingClientRect();
-            if (wordRect.bottom > containerRect.bottom - 60 || wordRect.top < containerRect.top + 60) {
-                viewerContainer.scrollTo({
-                    top: viewerContainer.scrollTop + (wordRect.top - containerRect.top) - (containerRect.height / 2.5),
-                    behavior: 'smooth'
-                });
-            }
-        }
+/* ═══════════════════════════════════════════════════════
+   Highlight loop (rAF)
+═══════════════════════════════════════════════════════ */
+function speechElapsed(t) {
+    let elapsed = t - speechStart;
+    if (elapsed <= 0) return 0;
+    for (const g of internalGaps) {
+        if (t >= g.end)       elapsed -= (g.end - g.start);
+        else if (t > g.start) { elapsed -= (t - g.start); break; }
+        else                  break;
+    }
+    return Math.max(0, elapsed);
+}
 
-        /* ---------------- Silence detection ----------------
-         * Piper writes a few hundred ms of silence before/after the actual
-         * speech in the WAV.  If we map currentTime/duration linearly we get
-         * a highlight that runs ahead of the audio.  Decode the buffer and
-         * find the speech window so progress is computed over real speech.
-         */
-        function getAudioCtx() {
-            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            return audioCtx;
-        }
+function totalSpeechDur() {
+    if (speechOnlyDuration > 0) return speechOnlyDuration;
+    if (speechEnd > speechStart) return speechEnd - speechStart;
+    return player.duration;
+}
 
-        async function detectSpeechWindow(blob) {
-            try {
-                const buf = await blob.arrayBuffer();
-                const decoded = await getAudioCtx().decodeAudioData(buf.slice(0));
-                const data = decoded.getChannelData(0);
-                const sr = decoded.sampleRate;
-                const totalDur = decoded.duration;
+function updateHighlight() {
+    if (!activeOffsets.length || !activeTotal) return;
+    const dur = totalSpeechDur();
+    if (!isFinite(dur) || dur <= 0) return;
+    const progress = Math.min(1, speechElapsed(player.currentTime) / dur);
+    const localIdx  = bsearch(progress * activeTotal);
+    const speakIdx  = playStartIdx + localIdx;
+    if (speakIdx === currentHLIdx) return;
+    currentHLIdx = speakIdx;
+    applyHighlight(speakIdx);
+}
 
-                // Window-based silence detection. Each window holds the peak
-                // absolute amplitude over ~20 ms of audio. A window is "silent"
-                // if its peak is below threshold; consecutive silent windows
-                // longer than minGapDur become a real silence gap.
-                const winSamples = Math.max(1, Math.floor(sr * 0.02));
-                const threshold  = 0.018;
-                const minGapDur  = 0.08; // ignore micro-pauses (breath, glottal stops)
+function startLoop() {
+    cancelAnimationFrame(rafHandle);
+    const tick = () => {
+        if (!isPlaying || player.paused || player.ended) { rafHandle = null; return; }
+        updateHighlight();
+        rafHandle = requestAnimationFrame(tick);
+    };
+    rafHandle = requestAnimationFrame(tick);
+}
+function stopLoop() { cancelAnimationFrame(rafHandle); rafHandle = null; }
 
-                const silentWin = [];
-                for (let i = 0; i + winSamples <= data.length; i += winSamples) {
-                    let peak = 0;
-                    for (let j = 0; j < winSamples; j++) {
-                        const v = Math.abs(data[i + j]);
-                        if (v > peak) peak = v;
-                    }
-                    silentWin.push(peak < threshold);
-                }
+player.addEventListener('play',   startLoop);
+player.addEventListener('pause',  stopLoop);
+player.addEventListener('seeked', updateHighlight);
 
-                // Coalesce consecutive silent windows into [start, end] gaps.
-                const allGaps = [];
-                let inGap = false, gapStart = 0;
-                for (let k = 0; k < silentWin.length; k++) {
-                    if (silentWin[k] && !inGap) { gapStart = k; inGap = true; }
-                    else if (!silentWin[k] && inGap) {
-                        const s = (gapStart * winSamples) / sr;
-                        const e = (k       * winSamples) / sr;
-                        if (e - s >= minGapDur) allGaps.push({ start: s, end: e });
-                        inGap = false;
-                    }
-                }
-                if (inGap) {
-                    const s = (gapStart * winSamples) / sr;
-                    const e = totalDur;
-                    if (e - s >= minGapDur) allGaps.push({ start: s, end: e });
-                }
+/* ═══════════════════════════════════════════════════════
+   Page auto-advance
+═══════════════════════════════════════════════════════ */
+player.onended = async () => {
+    if (isPlaying && currentPage < pdfPages.length) {
+        currentPage++;
+        updatePager();
+        await renderPage(currentPage);
+        generateAndPlay(currentPage, 0);
+    } else {
+        isPlaying = false;
+        stopLoop();
+        clearHighlights();
+        currentHLIdx = -1;
+        setStatus('Finished.', 'ok');
+    }
+};
 
-                // Leading + trailing gaps define the speech window.
-                let sStart = 0, sEnd = totalDur;
-                if (allGaps.length && allGaps[0].start <= 0.01) {
-                    sStart = allGaps[0].end;
-                    allGaps.shift();
-                }
-                if (allGaps.length && allGaps[allGaps.length - 1].end >= totalDur - 0.01) {
-                    sEnd = allGaps[allGaps.length - 1].start;
-                    allGaps.pop();
-                }
+/* ═══════════════════════════════════════════════════════
+   Pagination
+═══════════════════════════════════════════════════════ */
+function updatePager() {
+    pageInput.value = currentPage;
+    prevBtn.disabled = currentPage <= 1 || !pdfPages.length;
+    nextBtn.disabled = currentPage >= pdfPages.length || !pdfPages.length;
+}
 
-                // Internal gaps inside speech window — these are the sentence pauses.
-                const internal = allGaps.filter(g => g.start >= sStart && g.end <= sEnd);
-                const gapTotal = internal.reduce((acc, g) => acc + (g.end - g.start), 0);
-                const speechOnly = Math.max(0, (sEnd - sStart) - gapTotal);
+async function prevPage() {
+    if (currentPage <= 1) return;
+    currentPage--; updatePager(); prefetchState = null;
+    await renderPage(currentPage);
+    if (isPlaying) generateAndPlay(currentPage, 0);
+}
+async function nextPage() {
+    if (currentPage >= pdfPages.length) return;
+    currentPage++; updatePager(); prefetchState = null;
+    await renderPage(currentPage);
+    if (isPlaying) generateAndPlay(currentPage, 0);
+}
+async function jumpToPage() {
+    let n = parseInt(pageInput.value);
+    if (isNaN(n)) n = 1;
+    n = Math.max(1, Math.min(n, pdfPages.length));
+    currentPage = n; updatePager(); prefetchState = null;
+    await renderPage(currentPage);
+    if (isPlaying) generateAndPlay(currentPage, 0);
+}
 
-                return {
-                    start: Math.max(0, sStart - 0.02),
-                    end:   Math.min(totalDur, sEnd + 0.05),
-                    internal,
-                    speechOnly,
-                };
-            } catch (e) {
-                console.warn('decode failed, falling back to full duration', e);
-                return { start: 0, end: 0, internal: [], speechOnly: 0 };
-            }
-        }
+/* ═══════════════════════════════════════════════════════
+   PDF rendering + word overlay
+═══════════════════════════════════════════════════════ */
+async function renderPage(pageNum) {
+    if (!pdfDoc) return;
+    currentHLIdx = -1; hlWord = []; hlSent = [];
+    wordBoxes = []; speakable = []; speakMap = [];
 
-        /* ---------------- Highlight loop (rAF) ----------------
-         * Convert the audio's currentTime into "speech time elapsed" by
-         * subtracting any silent gaps that have been fully or partially
-         * crossed. While currentTime sits inside a silent gap, elapsed
-         * stops advancing — so the highlight stays parked on the current
-         * word until Piper actually starts speaking again.
-         */
-        function speechElapsed(audioTime) {
-            let elapsed = audioTime - speechStart;
-            if (elapsed <= 0) return 0;
-            for (const g of internalGaps) {
-                if (audioTime >= g.end)        elapsed -= (g.end - g.start);
-                else if (audioTime > g.start)  { elapsed -= (audioTime - g.start); break; }
-                else                            break;
-            }
-            return Math.max(0, elapsed);
-        }
+    wordLayer.innerHTML = '';
 
-        function totalSpeechDuration() {
-            if (speechOnlyDuration > 0) return speechOnlyDuration;
-            if (speechEnd > speechStart) return speechEnd - speechStart;
-            return player.duration; // last-resort fallback
-        }
+    const page     = await pdfDoc.getPage(pageNum);
+    const scale    = 1.6;
+    const vp       = page.getViewport({ scale });
+    const canvas   = document.getElementById('pdf-canvas');
+    const ctx      = canvas.getContext('2d');
+    const dpr      = window.devicePixelRatio || 1;
 
-        function updateHighlight() {
-            if (activeOffsets.length === 0 || activeTotal === 0) return;
-            const dur = totalSpeechDuration();
-            if (!isFinite(dur) || dur <= 0) return;
+    canvas.width  = Math.floor(vp.width  * dpr);
+    canvas.height = Math.floor(vp.height * dpr);
+    canvas.style.width  = Math.floor(vp.width)  + 'px';
+    canvas.style.height = Math.floor(vp.height) + 'px';
+    pageWrap.style.width  = Math.floor(vp.width)  + 'px';
+    pageWrap.style.height = Math.floor(vp.height) + 'px';
 
-            const elapsed = speechElapsed(player.currentTime);
-            const progress = Math.min(1, elapsed / dur);
-            const target = progress * activeTotal;
-            const localIdx = findLocalWordIndex(target);
-            const globalIdx = playStartIdx + localIdx;
+    const tf = dpr !== 1 ? [dpr,0,0,dpr,0,0] : null;
+    await page.render({ canvasContext:ctx, transform:tf, viewport:vp }).promise;
 
-            if (globalIdx === currentHighlightIndex) return;
-            currentHighlightIndex = globalIdx;
-            applyHighlight(globalIdx);
-        }
+    const pd    = pdfPages[pageNum - 1];
+    if (!pd) return;
+    const xS    = vp.width  / pd.width;
+    const yS    = vp.height / pd.height;
 
-        function startHighlightLoop() {
-            if (rafHandle) cancelAnimationFrame(rafHandle);
-            const tick = () => {
-                if (!isPlaying || player.paused || player.ended) { rafHandle = null; return; }
-                updateHighlight();
-                rafHandle = requestAnimationFrame(tick);
-            };
-            rafHandle = requestAnimationFrame(tick);
-        }
+    const frag  = document.createDocumentFragment();
+    pd.words.forEach((w, fullIdx) => {
+        const span = document.createElement('span');
+        span.className = 'word-box' + (w.skip ? ' skip-word' : '');
+        span.style.left   = (w.x0 * xS) + 'px';
+        span.style.top    = (w.y0 * yS) + 'px';
+        span.style.width  = ((w.x1 - w.x0) * xS) + 'px';
+        span.style.height = ((w.y1 - w.y0) * yS) + 'px';
+        span.title        = w.text;
+        span.textContent  = w.text;
 
-        function stopHighlightLoop() {
-            if (rafHandle) { cancelAnimationFrame(rafHandle); rafHandle = null; }
-        }
-
-        player.addEventListener('play',  startHighlightLoop);
-        player.addEventListener('pause', stopHighlightLoop);
-        player.addEventListener('seeked', updateHighlight);
-
-        /* ---------------- End-of-page chaining ---------------- */
-        player.onended = () => {
-            if (isPlaying && currentPage < pdfPages.length) {
-                currentPage++;
-                updatePaginationUI();
-                renderPDFPage(currentPage).then(() => generateAndPlay(currentPage, 0));
-            } else {
-                isPlaying = false;
-                clearHighlights();
-                currentHighlightIndex = -1;
-                setStatus('Finished playing document.', 'ok');
-            }
-        };
-
-        /* ---------------- Pagination ---------------- */
-        function updatePaginationUI() {
-            pageInput.value = currentPage;
-            prevBtn.disabled = (currentPage <= 1 || pdfPages.length === 0);
-            nextBtn.disabled = (currentPage >= pdfPages.length || pdfPages.length === 0);
-        }
-
-        async function prevPage() {
-            if (currentPage > 1) {
-                currentPage--;
-                updatePaginationUI();
-                if (isPlaying) { await renderPDFPage(currentPage); generateAndPlay(currentPage, 0); }
-                else            await renderPDFPage(currentPage);
-            }
-        }
-        async function nextPage() {
-            if (currentPage < pdfPages.length) {
-                currentPage++;
-                updatePaginationUI();
-                if (isPlaying) { await renderPDFPage(currentPage); generateAndPlay(currentPage, 0); }
-                else            await renderPDFPage(currentPage);
-            }
-        }
-        async function jumpToPage() {
-            let req = parseInt(pageInput.value);
-            if (isNaN(req) || req < 1) req = 1;
-            if (req > pdfPages.length) req = pdfPages.length;
-            currentPage = req;
-            updatePaginationUI();
-            if (isPlaying) { await renderPDFPage(currentPage); generateAndPlay(currentPage, 0); }
-            else            await renderPDFPage(currentPage);
-        }
-
-        /* ---------------- PDF rendering ---------------- */
-        async function renderPDFPage(pageNum) {
-            if (!pdfDoc) return;
-
-            // Reset page-level highlight state.
-            currentHighlightIndex = -1;
-            highlightWindow = [];
-            wordBoxes = [];
-            wordLayer.innerHTML = '';
-
-            const page = await pdfDoc.getPage(pageNum);
-            const scale = 1.6;
-            const viewport = page.getViewport({ scale });
-            const canvas = document.getElementById('pdf-canvas');
-            const ctx = canvas.getContext('2d');
-            const outputScale = window.devicePixelRatio || 1;
-
-            canvas.width  = Math.floor(viewport.width  * outputScale);
-            canvas.height = Math.floor(viewport.height * outputScale);
-            canvas.style.width  = Math.floor(viewport.width)  + 'px';
-            canvas.style.height = Math.floor(viewport.height) + 'px';
-
-            pdfPageContainer.style.width  = Math.floor(viewport.width)  + 'px';
-            pdfPageContainer.style.height = Math.floor(viewport.height) + 'px';
-
-            const transform = outputScale !== 1 ? [outputScale, 0, 0, outputScale, 0, 0] : null;
-            await page.render({ canvasContext: ctx, transform, viewport }).promise;
-
-            // Build word-box overlay from PyMuPDF coords. Both PyMuPDF and PDF.js
-            // use a top-left origin in PDF points, so we just multiply by scale.
-            const pageData = pdfPages[pageNum - 1];
-            if (!pageData) return;
-            const xScale = viewport.width  / pageData.width;
-            const yScale = viewport.height / pageData.height;
-
-            const frag = document.createDocumentFragment();
-            pageData.words.forEach((w, idx) => {
-                const span = document.createElement('span');
-                span.className = 'word-box';
-                const left = w.x0 * xScale;
-                const top  = w.y0 * yScale;
-                const width  = (w.x1 - w.x0) * xScale;
-                const height = (w.y1 - w.y0) * yScale;
-                span.style.left   = left + 'px';
-                span.style.top    = top  + 'px';
-                span.style.width  = width + 'px';
-                span.style.height = height + 'px';
-                span.title = w.text;
-                span.textContent = w.text;
-                span.dataset.idx = idx;
-                span.addEventListener('click', () => playFromWord(idx));
-                frag.appendChild(span);
-                wordBoxes.push(span);
+        if (!w.skip) {
+            const si = speakMap.length;
+            speakMap.push(fullIdx);
+            speakable.push(span);
+            span.addEventListener('click', () => {
+                const target = speakMap.findIndex(fi => fi >= fullIdx);
+                if (target >= 0) playFromWord(target);
             });
-            wordLayer.appendChild(frag);
         }
 
-        /* ---------------- Load / Play ---------------- */
-        async function loadPDF() {
-            if (!fileInput.files[0]) return alert('Select a PDF first.');
+        wordBoxes.push(span);
+        frag.appendChild(span);
+    });
+    wordLayer.appendChild(frag);
 
-            loadBtn.disabled = true;
-            setStatus('Loading visual and extracting text…', 'busy');
-            placeholder.style.display = 'none';
-            pdfPageContainer.style.display = 'block';
+    // Sentence ranges over speakable words
+    sentenceRanges = computeSentences(pd.words.filter(w => !w.skip));
+}
 
-            try {
-                const arrayBuffer = await fileInput.files[0].arrayBuffer();
-                pdfDoc = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+/* ═══════════════════════════════════════════════════════
+   Load PDF
+═══════════════════════════════════════════════════════ */
+async function loadPDF(explicitFile) {
+    const file = explicitFile || fileInput.files[0];
+    if (!file) return alert('Select a PDF first.');
 
-                const formData = new FormData();
-                formData.append('file', fileInput.files[0]);
-                const res = await fetch('/extract', { method: 'POST', body: formData });
-                const data = await res.json();
+    if (isPlaying) stopAudio();
+    prefetchState = null;
 
-                pdfPages = data.pages;
-                document.getElementById('totalPages').innerText = data.total_pages;
+    loadBtn.disabled = true;
+    setStatus('Loading…', 'busy');
+    placeholder.style.display = 'none';
+    pageWrap.style.display = 'block';
 
-                currentPage = 1;
-                pageInput.disabled = false;
-                playBtn.disabled = false;
-                stopBtn.disabled = false;
-                updatePaginationUI();
+    currentFileName = file.name;
+    currentFileSize = file.size;
 
-                await renderPDFPage(currentPage);
-                setStatus('PDF loaded. Click any word to start reading.', 'ok');
-            } catch (e) {
-                console.error(e);
-                setStatus('Error reading PDF.', 'err');
-            } finally {
-                loadBtn.disabled = false;
+    try {
+        const ab   = await file.arrayBuffer();
+        pdfDoc     = await pdfjsLib.getDocument({ data: ab }).promise;
+
+        const form = new FormData();
+        form.append('file', file);
+        const data = await fetch('/extract', { method:'POST', body:form }).then(r => r.json());
+
+        pdfPages = data.pages;
+        document.getElementById('totalPages').textContent = data.total_pages;
+
+        currentPage = 1;
+        pageInput.disabled = false;
+        playBtn.disabled   = false;
+        stopBtn.disabled   = false;
+        updatePager();
+        await renderPage(1);
+
+        setStatus('Loaded. Click a word or press Play.', 'ok');
+
+        // Resume prompt
+        const saved = loadSavedProgress();
+        if (saved && saved.fileName === currentFileName && saved.fileSize === currentFileSize) {
+            showToast(saved);
+        }
+    } catch(e) {
+        console.error(e);
+        setStatus('Error loading PDF.', 'err');
+    } finally {
+        loadBtn.disabled = false;
+    }
+}
+
+/* ═══════════════════════════════════════════════════════
+   Play controls
+═══════════════════════════════════════════════════════ */
+async function playFromPage() {
+    if (!pdfPages.length) return alert('Load a PDF first.');
+    isPlaying = true;
+    await renderPage(currentPage);
+    generateAndPlay(currentPage, 0);
+}
+
+function playFromWord(speakIdx) {
+    if (!pdfPages.length) return;
+    player.pause();
+    isPlaying = true;
+    clearHighlights(); currentHLIdx = -1;
+    generateAndPlay(currentPage, speakIdx);
+}
+
+function stopAudio() {
+    isPlaying = false;
+    player.pause();
+    stopLoop();
+    progressHide();
+    clearHighlights(); currentHLIdx = -1;
+    prefetchState = null;
+    setStatus('Stopped.', '');
+}
+
+function togglePlayPause() {
+    if (!pdfPages.length) return;
+    if (!player.paused && !player.ended) {
+        player.pause();
+        setStatus('Paused.', '');
+    } else if (isPlaying && !player.ended) {
+        player.play();
+        setStatus(`Playing page ${currentPage}.`, 'busy');
+    } else {
+        playFromPage();
+    }
+}
+
+/* ═══════════════════════════════════════════════════════
+   Core: generate audio + sync state
+═══════════════════════════════════════════════════════ */
+async function generateAndPlay(pageNum, startIdx) {
+    const pd = pdfPages[pageNum - 1];
+    if (!pd || !speakable.length) {
+        setStatus(`Skipping empty page ${pageNum}…`, 'busy');
+        player.dispatchEvent(new Event('ended'));
+        return;
+    }
+
+    playStartIdx = Math.max(0, Math.min(startIdx | 0, speakable.length - 1));
+    const text   = speakMap.slice(playStartIdx).map(fi => pd.words[fi].text).join(' ').trim();
+
+    if (!text) {
+        setStatus(`Skipping empty page ${pageNum}…`, 'busy');
+        player.dispatchEvent(new Event('ended'));
+        return;
+    }
+
+    buildOffsets(playStartIdx);
+    speechStart = 0; speechEnd = 0; internalGaps = []; speechOnlyDuration = 0;
+
+    const isPremium = selectedVoice.engine !== 'piper';
+    setStatus(`Generating page ${pageNum}…`, 'busy');
+
+    let blob, win;
+    const usePrefetch = prefetchState && prefetchState.page === pageNum && startIdx === 0;
+
+    if (usePrefetch) {
+        blob = prefetchState.blob;
+        win  = prefetchState.win;
+        prefetchState = null;
+    } else {
+        progressStart(text, selectedVoice.engine);
+        try {
+            const res = await fetch('/synthesize', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    text,
+                    voice:  selectedVoice.name,
+                    engine: selectedVoice.engine,
+                })
+            });
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({}));
+                throw new Error(err.error || res.statusText);
             }
-        }
-
-        async function playFromPage() {
-            if (pdfPages.length === 0) return alert('Load a PDF first.');
-            isPlaying = true;
-            await renderPDFPage(currentPage);
-            generateAndPlay(currentPage, 0);
-        }
-
-        async function playFromWord(wordIdx) {
-            if (pdfPages.length === 0) return;
-            // Pause any in-flight audio so its trailing 'ended' won't advance pages.
-            player.pause();
-            isPlaying = true;
-            clearHighlights();
-            currentHighlightIndex = -1;
-            generateAndPlay(currentPage, wordIdx);
-        }
-
-        function stopAudio() {
+            blob = await res.blob();
+            progressDone(selectedVoice.engine);
+            win  = await detectSpeechWindow(blob);
+        } catch(e) {
+            progressHide();
+            console.error(e);
+            setStatus('Audio generation failed: ' + e.message, 'err');
             isPlaying = false;
-            player.pause();
-            stopHighlightLoop();
-            setStatus('Stopped.', '');
-            clearHighlights();
-            currentHighlightIndex = -1;
+            return;
         }
+    }
 
-        async function generateAndPlay(pageNum, startIdx) {
-            const page = pdfPages[pageNum - 1];
-            if (!page || page.words.length === 0) {
-                setStatus(`Skipping empty page ${pageNum}…`, 'busy');
-                player.dispatchEvent(new Event('ended'));
-                return;
-            }
+    speechStart        = win.start;
+    speechEnd          = win.end;
+    internalGaps       = win.internal   || [];
+    speechOnlyDuration = win.speechOnly || 0;
 
-            playStartIdx = Math.max(0, Math.min(startIdx | 0, page.words.length - 1));
-            const slice = page.words.slice(playStartIdx);
-            const text = slice.map(w => w.text).join(' ').trim();
+    if (audioBlobUrl) URL.revokeObjectURL(audioBlobUrl);
+    audioBlobUrl = URL.createObjectURL(blob);
+    player.src   = audioBlobUrl;
 
-            if (!text) {
-                setStatus(`Skipping empty page ${pageNum}…`, 'busy');
-                player.dispatchEvent(new Event('ended'));
-                return;
-            }
+    const startPlayback = () => {
+        if (speechStart > 0.05) { try { player.currentTime = speechStart; } catch(_){} }
+        player.playbackRate = playbackRate;
+        player.play();
+        player.removeEventListener('loadedmetadata', startPlayback);
+    };
+    if (player.readyState >= 1) startPlayback();
+    else player.addEventListener('loadedmetadata', startPlayback);
 
-            // Pre-build the cumulative weights for the spoken word range.
-            buildOffsets(page.words, playStartIdx);
-            // Reset the speech window / gap data until the new audio is decoded.
-            speechStart = 0;
-            speechEnd = 0;
-            internalGaps = [];
-            speechOnlyDuration = 0;
+    setStatus(`Playing page ${pageNum}.`, 'busy');
+    saveProgress(pageNum, playStartIdx);
+    prefetchNextPage(pageNum);   // fire-and-forget
+}
 
-            setStatus(`Generating audio for page ${pageNum}…`, 'busy');
+/* ═══════════════════════════════════════════════════════
+   Pre-fetch
+═══════════════════════════════════════════════════════ */
+async function prefetchNextPage(pageNum) {
+    const next = pageNum + 1;
+    if (next > pdfPages.length) return;
+    const pd = pdfPages[next - 1];
+    if (!pd) return;
+    const text = pd.words.filter(w => !w.skip).map(w => w.text).join(' ').trim();
+    if (!text) return;
+    try {
+        const res  = await fetch('/synthesize', {
+            method: 'POST', headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({
+                text,
+                voice:  selectedVoice.name,
+                engine: selectedVoice.engine,
+            })
+        });
+        if (!res.ok) return;
+        const blob = await res.blob();
+        const win  = await detectSpeechWindow(blob);
+        prefetchState = { page: next, blob, win };
+    } catch(_) { /* silent — main playback continues */ }
+}
 
-            try {
-                const res = await fetch('/synthesize', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ text })
-                });
+/* ═══════════════════════════════════════════════════════
+   LocalStorage progress
+═══════════════════════════════════════════════════════ */
+function saveProgress(page, wordIdx) {
+    if (!currentFileName) return;
+    localStorage.setItem('simpletts', JSON.stringify({
+        fileName: currentFileName, fileSize: currentFileSize,
+        page, wordIdx, rate: playbackRate
+    }));
+}
+function loadSavedProgress() {
+    try { return JSON.parse(localStorage.getItem('simpletts')); }
+    catch(_) { return null; }
+}
 
-                if (audioBlobUrl) URL.revokeObjectURL(audioBlobUrl);
-                const blob = await res.blob();
+function showToast(saved) {
+    savedProgress = saved;
+    document.getElementById('toastMsg').textContent = `Resume from page ${saved.page}?`;
+    document.getElementById('toast').style.display = 'flex';
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(dismissToast, 8000);
+}
+function dismissToast() {
+    document.getElementById('toast').style.display = 'none';
+    clearTimeout(toastTimer);
+}
+async function resumePlayback() {
+    dismissToast();
+    if (!savedProgress) return;
+    const p = Math.min(savedProgress.page, pdfPages.length);
+    if (savedProgress.rate) changeRate(savedProgress.rate - playbackRate);
+    currentPage = p; updatePager();
+    await renderPage(p);
+    isPlaying = true;
+    generateAndPlay(p, savedProgress.wordIdx || 0);
+}
 
-                // Detect leading/trailing silence AND internal sentence gaps
-                // so the highlight pauses exactly when Piper pauses.
-                const win = await detectSpeechWindow(blob);
-                speechStart = win.start;
-                speechEnd = win.end;
-                internalGaps = win.internal || [];
-                speechOnlyDuration = win.speechOnly || 0;
+/* ═══════════════════════════════════════════════════════
+   Help modal
+═══════════════════════════════════════════════════════ */
+function showHelp()  { document.getElementById('helpModal').style.display = 'grid'; }
+function closeHelp() { document.getElementById('helpModal').style.display = 'none'; }
 
-                audioBlobUrl = URL.createObjectURL(blob);
-                player.src = audioBlobUrl;
-                // Skip past the leading silence so audio + highlight start together.
-                const startPlayback = () => {
-                    if (speechStart > 0.05) {
-                        try { player.currentTime = speechStart; } catch (_) {}
-                    }
-                    player.play();
-                    player.removeEventListener('loadedmetadata', startPlayback);
-                };
-                if (player.readyState >= 1) startPlayback();
-                else player.addEventListener('loadedmetadata', startPlayback);
+/* ═══════════════════════════════════════════════════════
+   Keyboard shortcuts
+═══════════════════════════════════════════════════════ */
+window.addEventListener('keydown', e => {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
+    const modal = document.getElementById('helpModal');
+    if (modal.style.display !== 'none') {
+        if (e.key === 'Escape') { closeHelp(); e.preventDefault(); }
+        return;
+    }
+    switch (e.key) {
+        case ' ':          e.preventDefault(); togglePlayPause();  break;
+        case 'ArrowLeft':  e.preventDefault(); prevPage();          break;
+        case 'ArrowRight': e.preventDefault(); nextPage();          break;
+        case 'ArrowUp':    e.preventDefault(); changeRate(0.1);     break;
+        case 'ArrowDown':  e.preventDefault(); changeRate(-0.1);    break;
+        case 's': case 'S': case 'Escape': stopAudio(); break;
+        case '?':           showHelp(); break;
+    }
+});
 
-                setStatus(`Playing page ${pageNum}.`, 'busy');
-            } catch (e) {
-                console.error(e);
-                setStatus('Audio generation failed.', 'err');
-                isPlaying = false;
-            }
-        }
-    </script>
+/* ═══════════════════════════════════════════════════════
+   Init
+═══════════════════════════════════════════════════════ */
+loadVoices();
+</script>
 </body>
 </html>
