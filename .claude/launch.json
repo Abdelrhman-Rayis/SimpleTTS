@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "SimpleTTS API Server",
+      "runtimeExecutable": "/bin/bash",
+      "runtimeArgs": ["-c", "cd /Users/rayis/SimpleTTS && /Users/rayis/OpenWebTTS/venv/bin/uvicorn app:app --host 127.0.0.1 --port 8002 --reload"],
+      "port": 8002
+    },
+    {
+      "name": "SimpleTTS Desktop App",
+      "runtimeExecutable": "/bin/bash",
+      "runtimeArgs": ["-c", "cd /Users/rayis/SimpleTTS && /Users/rayis/OpenWebTTS/venv/bin/python desktop.py"],
+      "port": 0
+    }
+  ]
+}

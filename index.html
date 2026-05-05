@@ -34,43 +34,62 @@
              margin:0;background:var(--bg);color:var(--text);font-size:14px;
              line-height:1.5;display:flex;flex-direction:column;height:100vh;overflow:hidden}
 
-        /* ── Topbar ── */
-        .topbar{display:flex;align-items:center;justify-content:space-between;
-                padding:12px 20px;background:var(--panel);border-bottom:1px solid var(--border);
-                box-shadow:0 1px 3px rgba(15,23,42,.06);z-index:20;gap:12px}
-        .brand{display:flex;align-items:center;gap:10px;font-weight:700;font-size:1rem;letter-spacing:-.01em}
-        .brand-logo{width:28px;height:28px;border-radius:7px;
+        /* ── Sidebar brand mark (compact, low-distraction) ── */
+        .sidebar-brand{display:flex;align-items:center;gap:6px;padding:0 6px;
+                       color:var(--subtle);font-size:.7rem;font-weight:600;
+                       opacity:.65;flex-shrink:0;white-space:nowrap}
+        .brand-logo{width:20px;height:20px;border-radius:5px;
                     background:linear-gradient(135deg,#6366f1,#4f46e5);
-                    display:grid;place-items:center;color:#fff;font-size:15px;flex-shrink:0}
-        .brand-sub{color:var(--subtle);font-weight:400;font-size:.82rem;margin-left:4px}
-        .topbar-right{display:flex;align-items:center;gap:8px;font-size:.8rem;color:var(--subtle)}
-        .btn-help{width:26px;height:26px;border-radius:50%;border:1px solid var(--border);
-                  background:var(--panel);cursor:pointer;font-size:.85rem;font-weight:700;
-                  color:var(--subtle);display:grid;place-items:center;transition:background .15s}
+                    display:grid;place-items:center;color:#fff;font-size:11px;flex-shrink:0}
+
+        /* ── Floating help button (top-right of viewer) ── */
+        .btn-help{position:absolute;top:14px;right:14px;z-index:30;
+                  width:30px;height:30px;border-radius:50%;
+                  border:1px solid var(--border);background:var(--panel);
+                  cursor:pointer;font-size:.85rem;font-weight:700;color:var(--subtle);
+                  display:grid;place-items:center;box-shadow:var(--shadow);transition:background .15s}
         .btn-help:hover{background:var(--primary-s);color:var(--primary);border-color:var(--primary)}
 
-        /* ── Layout ── */
-        .app{flex:1;display:flex;min-height:0}
-        .sidebar{width:330px;min-width:330px;background:var(--panel);border-right:1px solid var(--border);
-                 padding:18px;overflow-y:auto;display:flex;flex-direction:column;gap:16px}
+        /* ── Layout (sidebar floats, viewer takes full area) ── */
+        .app{flex:1;position:relative;min-height:0}
+        .sidebar{position:absolute;bottom:14px;left:14px;right:14px;height:auto;z-index:50;
+                 background:rgba(255,255,255,.42);
+                 backdrop-filter:blur(28px) saturate(1.6);
+                 -webkit-backdrop-filter:blur(28px) saturate(1.6);
+                 border:1px solid rgba(255,255,255,.35);
+                 border-radius:14px;
+                 box-shadow:0 18px 40px rgba(15,23,42,.12),
+                            inset 0 1px 0 rgba(255,255,255,.5);
+                 padding:7px 12px;
+                 overflow-x:auto;overflow-y:hidden;scrollbar-width:none;
+                 display:flex;flex-direction:row;align-items:center;gap:6px;flex-wrap:nowrap;
+                 transition:opacity .35s ease, transform .25s ease}
+        .sidebar::-webkit-scrollbar{display:none}
+        .sidebar.idle{opacity:.18}
+        .sidebar.idle:hover{opacity:1}
+        /* Reveal zone: hovering near the bottom edge always wakes the bar */
+        .sidebar::after{content:'';position:absolute;left:0;right:0;bottom:100%;height:28px}
 
-        /* ── Cards ── */
-        .card{background:var(--muted);border:1px solid var(--border);border-radius:var(--r);padding:13px}
-        .card h2{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;
-                 color:var(--subtle);margin:0 0 10px}
+        /* ── Sections — flat horizontal chips inside the glass bar ── */
+        .card{background:transparent;border:none;padding:4px 10px;
+              display:flex;align-items:center;gap:8px;flex-shrink:0}
+        .card + .card{border-left:1px solid rgba(15,23,42,.1);margin-left:2px}
+        .card h2{display:none}
 
         /* ── File drop ── */
-        .file-drop{display:block;border:1px dashed #cbd5e1;border-radius:var(--r-s);padding:13px;
-                   text-align:center;color:var(--subtle);background:var(--panel);cursor:pointer;
+        .file-drop{display:inline-flex;align-items:center;gap:5px;
+                   border:1px dashed rgba(15,23,42,.2);border-radius:var(--r-s);
+                   padding:4px 9px;color:var(--subtle);white-space:nowrap;
+                   background:rgba(255,255,255,.32);cursor:pointer;font-size:.76rem;
                    transition:border-color .15s,background .15s}
-        .file-drop:hover{border-color:var(--primary);background:var(--primary-s);color:var(--primary)}
+        .file-drop:hover{border-color:var(--primary);background:rgba(238,242,255,.55);color:var(--primary)}
         .file-drop input{display:none}
         .fname{color:var(--text);font-weight:500;word-break:break-all}
 
         /* ── Select ── */
-        select.sel{width:100%;margin-top:8px;padding:7px 10px;font-size:.88rem;
-                   border:1px solid var(--border);border-radius:var(--r-s);
-                   background:var(--panel);color:var(--text);font-family:inherit;cursor:pointer}
+        select.sel{width:auto;min-width:110px;max-width:150px;margin-top:0;padding:4px 8px;font-size:.76rem;
+                   border:1px solid rgba(15,23,42,.12);border-radius:var(--r-s);
+                   background:rgba(255,255,255,.5);color:var(--text);font-family:inherit;cursor:pointer}
         select.sel:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-s)}
         select.sel:disabled{opacity:.5;cursor:default}
 
@@ -88,26 +107,38 @@
         .btn-ghost{background:var(--panel);color:var(--text);border:1px solid var(--border)}
         .btn-ghost:hover:not(:disabled){background:var(--bg)}
         .btn-ghost:disabled{color:#cbd5e1}
-        .btn-sq{width:36px;height:36px;padding:0;border-radius:var(--r-s)}
+        .btn-sq{width:28px;height:28px;padding:0;border-radius:var(--r-s);font-size:.78rem}
 
         /* ── Pager ── */
-        .pager{display:grid;grid-template-columns:36px 1fr 36px;align-items:center;gap:8px}
-        .pageinfo{display:flex;align-items:center;justify-content:center;gap:5px;
-                  color:var(--subtle);font-size:.86rem}
-        .pageinfo input{width:52px;padding:5px 8px;text-align:center;border:1px solid var(--border);
-                        border-radius:var(--r-s);font-weight:600;font-family:inherit;font-size:.88rem;
+        .pager{display:grid;grid-template-columns:28px 1fr 28px;align-items:center;gap:5px}
+        .pageinfo{display:flex;align-items:center;justify-content:center;gap:3px;
+                  color:var(--subtle);font-size:.78rem;white-space:nowrap}
+        .pageinfo input{width:38px;padding:3px 5px;text-align:center;border:1px solid var(--border);
+                        border-radius:var(--r-s);font-weight:600;font-family:inherit;font-size:.8rem;
                         background:var(--panel)}
         .pageinfo input:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-s)}
 
-        /* ── Transport ── */
-        .transport{display:flex;gap:8px}
-        .transport .btn{flex:1}
+        /* ── Transport (compact horizontal play + stop) ── */
+        .transport{display:flex;align-items:center;gap:7px}
+        .play-main{width:38px;height:38px;border-radius:50%;background:var(--ok);color:#fff;
+                   border:none;cursor:pointer;display:grid;place-items:center;
+                   font-size:1rem;line-height:1;flex-shrink:0;
+                   box-shadow:0 4px 10px rgba(5,150,105,.35);
+                   transition:transform .1s,background .15s}
+        .play-main:hover:not(:disabled){background:var(--ok-h);transform:scale(1.05)}
+        .play-main:active:not(:disabled){transform:scale(.96)}
+        .play-main:disabled{background:#a7f3d0;box-shadow:none;cursor:not-allowed}
+        .stop-icon{width:30px;height:30px;border-radius:50%;flex-shrink:0;padding:0;
+                   font-size:.75rem;line-height:1}
+
+        /* Hide native audio bar — big play button + speed slider cover the same controls */
+        #player{display:none}
 
         /* ── Rate row ── */
-        .rate-row{display:flex;align-items:center;gap:8px;margin-top:10px}
-        .rate-row label{font-size:.8rem;color:var(--subtle);white-space:nowrap;width:42px}
-        .rate-row input[type=range]{flex:1;accent-color:var(--primary)}
-        .rate-val{font-size:.82rem;font-weight:600;color:var(--primary);white-space:nowrap;width:38px;text-align:right}
+        .rate-row{display:flex;align-items:center;gap:5px;margin-top:0}
+        .rate-row label{font-size:.74rem;color:var(--subtle);white-space:nowrap;width:auto}
+        .rate-row input[type=range]{width:68px;flex:none;accent-color:var(--primary)}
+        .rate-val{font-size:.76rem;font-weight:600;color:var(--primary);white-space:nowrap;width:28px;text-align:right}
 
         /* ── Audio element ── */
         #player{width:100%;margin-top:10px;outline:none}
@@ -115,10 +146,11 @@
         /* ── Hint ── */
         .hint{font-size:.76rem;color:var(--subtle);margin-top:8px;line-height:1.4}
 
-        /* ── Status pill ── */
-        .status{display:flex;align-items:center;gap:8px;padding:9px 12px;border-radius:var(--r-s);
-                font-size:.83rem;color:var(--subtle);background:var(--panel);
-                border:1px solid var(--border);min-height:38px}
+        /* ── Status pill (subtle, blends into the glass) ── */
+        .status{display:flex;align-items:center;gap:6px;padding:4px 8px;border-radius:var(--r-s);
+                font-size:.74rem;color:var(--subtle);background:rgba(255,255,255,.4);
+                border:1px solid rgba(255,255,255,.4);white-space:nowrap;
+                min-height:0;margin-left:auto;flex-shrink:0}
         .status .dot{width:7px;height:7px;border-radius:50%;background:#cbd5e1;flex-shrink:0}
         .status.busy .dot{background:var(--primary);animation:pulse 1.4s infinite}
         .status.ok   .dot{background:var(--ok)}
@@ -136,20 +168,21 @@
         .status.gen .ring,
         .status.gen .pct{display:inline-block}
 
-        /* ── Viewer ── */
-        .viewer{flex:1;background:#dde1e9;overflow:auto;display:flex;
-                align-items:flex-start;justify-content:center;
-                position:relative;padding:24px}
+        /* ── Viewer (continuous vertical scroll of all pages) ── */
+        .viewer{width:100%;height:100%;background:#dde1e9;overflow:auto;display:flex;
+                flex-direction:column;align-items:center;
+                position:relative;padding:24px 24px 90px 24px;gap:18px}
         .viewer.drag-over{outline:2px dashed var(--primary);outline-offset:-4px;background:rgba(79,70,229,.04)}
         .placeholder{margin:auto;color:#94a3b8;text-align:center;font-size:.95rem}
         .placeholder .ico{font-size:2.5rem;display:block;margin-bottom:8px;opacity:.5}
 
-        .page-wrap{position:relative;background:#fff;margin:0 auto;
+        .page-wrap{position:relative;background:#fff;flex-shrink:0;
                    box-shadow:0 6px 24px rgba(15,23,42,.16);border-radius:3px;overflow:hidden}
-        #pdf-canvas{display:block}
+        .page-wrap.active{box-shadow:0 6px 24px rgba(79,70,229,.25),0 0 0 2px var(--primary)}
+        .pdf-canvas{display:block}
 
         /* ── Word overlay ── */
-        #word-layer{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:auto}
+        .word-layer{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:auto}
         .word-box{position:absolute;color:transparent;cursor:pointer;border-radius:2px;
                   line-height:1;user-select:none;transition:background-color .06s ease-out}
         .word-box:hover{background-color:var(--hover-hl)}
@@ -181,30 +214,80 @@
         .kb td:first-child{font-family:ui-monospace,monospace;background:var(--muted);border-radius:4px;
                            color:var(--primary);font-weight:600;text-align:center;white-space:nowrap;width:90px}
 
+        /* ── Voice Notes — floating panel in the viewer ── */
+        /* Mic button — anchored to .app, sits below the help (?) button */
+        .btn-mic{top:54px;right:14px;position:absolute;z-index:40}
+        .btn-mic:hover{background:var(--primary-s);color:var(--primary);border-color:var(--primary)}
+        .btn-mic.recording{background:var(--stop)!important;border-color:var(--stop)!important;
+                           color:#fff!important;animation:pulse 1s infinite}
+        /* Count badge on the mic button */
+        .note-cnt-badge{position:absolute;top:-5px;right:-5px;width:15px;height:15px;
+                        border-radius:50%;background:var(--primary);color:#fff;
+                        font-size:.52rem;font-weight:700;border:2px solid var(--bg);
+                        display:none;align-items:center;justify-content:center}
+        .note-cnt-badge.show{display:flex}
+        /* Floating notes panel — anchored to .app */
+        .notes-float{position:absolute;top:90px;right:14px;width:290px;z-index:45;
+                     background:rgba(255,255,255,.97);
+                     backdrop-filter:blur(20px) saturate(1.3);
+                     -webkit-backdrop-filter:blur(20px) saturate(1.3);
+                     border:1px solid rgba(15,23,42,.1);border-radius:12px;
+                     box-shadow:0 8px 32px rgba(15,23,42,.18);
+                     padding:10px 12px;
+                     flex-direction:column;gap:8px;
+                     max-height:min(380px,60vh);display:none}
+        .notes-float.open{display:flex}
+        .notes-hdr{display:flex;align-items:center;gap:6px;flex-shrink:0}
+        .notes-hdr-title{font-size:.68rem;font-weight:700;text-transform:uppercase;
+                         letter-spacing:.08em;color:var(--subtle);flex:1}
+        .notes-hdr button{background:none;border:none;cursor:pointer;font-size:.72rem;
+                          color:var(--subtle);padding:2px 7px;border-radius:4px;font-family:inherit}
+        .notes-hdr button:hover{background:var(--bg);color:var(--text)}
+        .notes-list{overflow-y:auto;display:flex;flex-direction:column;gap:6px;flex:1;min-height:0}
+        .note-item{background:rgba(15,23,42,.03);border:1px solid rgba(15,23,42,.07);
+                   border-radius:8px;padding:8px 10px;font-size:.8rem;line-height:1.45}
+        .note-meta{font-size:.69rem;color:var(--subtle);margin-bottom:3px;
+                   display:flex;align-items:center;gap:5px}
+        .note-ctx{font-size:.71rem;color:var(--primary);margin-top:4px;
+                  font-style:italic;opacity:.8;line-height:1.35}
+        .notes-empty{font-size:.79rem;color:var(--subtle);text-align:center;
+                     padding:20px 0;opacity:.6}
+        /* Truncate the filename in the bar so it doesn't cause wrapping */
+        #dropLabel{max-width:120px;overflow:hidden;text-overflow:ellipsis;
+                   white-space:nowrap;display:inline-block;vertical-align:middle}
+
         /* ── Responsive ── */
         @media(max-width:900px){
             body{overflow:auto;height:auto}
             .app{flex-direction:column}
-            .sidebar{width:100%;min-width:0;border-right:none;border-bottom:1px solid var(--border)}
-            .viewer{padding:14px}
+            .sidebar{bottom:8px;left:8px;right:8px;padding:6px 10px}
+            .viewer{padding:14px 14px 80px}
         }
     </style>
 </head>
 <body>
 
-<header class="topbar">
-    <div class="brand">
-        <div class="brand-logo">📖</div>
-        SimpleTTS<span class="brand-sub">— AI PDF reader</span>
-    </div>
-    <div class="topbar-right">
-        <span>Local Piper · PDF.js</span>
-        <button class="btn-help" onclick="showHelp()" title="Keyboard shortcuts (?)">?</button>
-    </div>
-</header>
-
 <div class="app">
     <aside class="sidebar">
+
+        <div class="sidebar-brand">
+            <span class="brand-logo">📖</span>
+            <span>SimpleTTS</span>
+        </div>
+
+        <div class="card">
+            <h2>Playback</h2>
+            <div class="transport">
+                <button class="play-main" id="playMain" onclick="togglePlayPause()" disabled aria-label="Play / Pause">▶</button>
+                <button class="btn btn-stop stop-icon" id="stopBtn" onclick="stopAudio()" disabled aria-label="Stop">⏹</button>
+            </div>
+            <div class="rate-row">
+                <label>Speed</label>
+                <input type="range" id="rateSlider" min="0.75" max="1.5" step="0.05" value="1">
+                <span class="rate-val" id="rateDisplay">1.00×</span>
+            </div>
+            <audio id="player" controls></audio>
+        </div>
 
         <div class="card">
             <h2>Document</h2>
@@ -213,7 +296,6 @@
                 <div id="dropLabel">Click to choose a PDF…</div>
             </label>
             <select id="voiceSelect" class="sel" title="TTS voice"></select>
-            <button class="btn btn-block" id="loadBtn" onclick="loadPDF()" disabled>Load PDF</button>
         </div>
 
         <div class="card">
@@ -226,21 +308,6 @@
                 </div>
                 <button class="btn btn-ghost btn-sq" id="nextBtn" onclick="nextPage()" disabled>▶</button>
             </div>
-        </div>
-
-        <div class="card">
-            <h2>Playback</h2>
-            <div class="transport">
-                <button class="btn btn-ok"   id="playBtn" onclick="playFromPage()" disabled>▶ Play</button>
-                <button class="btn btn-stop" id="stopBtn" onclick="stopAudio()"    disabled>⏹ Stop</button>
-            </div>
-            <div class="rate-row">
-                <label>Speed</label>
-                <input type="range" id="rateSlider" min="0.75" max="1.5" step="0.05" value="1">
-                <span class="rate-val" id="rateDisplay">1.00×</span>
-            </div>
-            <audio id="player" controls></audio>
-            <div class="hint">Click any word in the PDF to start reading from there.</div>
         </div>
 
         <div class="status" id="statusEl">
@@ -256,17 +323,30 @@
     </aside>
 
     <main class="viewer" id="viewer">
+        <button class="btn-help" onclick="showHelp()" title="Keyboard shortcuts (?)">?</button>
         <div class="placeholder" id="placeholder"><span class="ico">📄</span>No PDF loaded</div>
-        <div class="page-wrap" id="pageWrap" style="display:none">
-            <canvas id="pdf-canvas"></canvas>
-            <div id="word-layer"></div>
-        </div>
         <div class="toast" id="toast" style="display:none">
             <span id="toastMsg"></span>
             <button onclick="resumePlayback()">Resume</button>
             <button onclick="dismissToast()">✕</button>
         </div>
     </main>
+
+    <!-- Mic button + notes panel inside .app so position:absolute uses .app as containing block -->
+    <button class="btn-help btn-mic" id="noteBtn" onclick="handleMicClick()"
+            title="Record voice note (N)">
+        🎤<span class="note-cnt-badge" id="noteCntBadge"></span>
+    </button>
+    <div class="notes-float" id="notesPanel">
+        <div class="notes-hdr">
+            <span class="notes-hdr-title">Voice Notes</span>
+            <button onclick="copyNotes()" title="Copy all to clipboard">Copy</button>
+            <button onclick="clearNotes()" title="Delete all">Clear</button>
+            <button onclick="closeNotesPanel()">✕</button>
+        </div>
+        <div class="notes-list" id="notesList"></div>
+        <div class="notes-empty" id="notesEmpty">No notes yet.<br>Press 🎤 while reading to record one.</div>
+    </div>
 </div>
 
 <!-- Help modal -->
@@ -281,6 +361,8 @@
             <tr><td>← →</td><td>Previous / next page</td></tr>
             <tr><td>↑ ↓</td><td>Speed +/− 0.1×</td></tr>
             <tr><td>S / Esc</td><td>Stop & clear</td></tr>
+            <tr><td>N</td><td>Record voice note</td></tr>
+            <tr><td>M</td><td>Show / hide notes</td></tr>
             <tr><td>?</td><td>This screen</td></tr>
         </table>
     </div>
@@ -303,9 +385,11 @@ let wordBoxes        = [];   // all word spans (fullIdx → span)
 let speakable        = [];   // spans for non-skip words
 let speakMap         = [];   // speakIdx → fullIdx
 let sentenceRanges   = [];   // over speakable indices
+let paragraphs       = [];   // [{startSpeakIdx, endSpeakIdx, text}] per current page
 
 // Playback position
-let playStartIdx      = 0;   // speakable index
+let playStartIdx      = 0;   // speakable index where current audio starts
+let playEndIdx        = 0;   // speakable index where current audio ends (paragraph end)
 let activeOffsets     = [];  // cumulative weight for current spoken range
 let activeTotal       = 0;
 
@@ -344,15 +428,19 @@ const player      = document.getElementById('player');
 const statusEl    = document.getElementById('statusEl');
 const statusTxt   = document.getElementById('statusTxt');
 const viewer      = document.getElementById('viewer');
-const pageWrap    = document.getElementById('pageWrap');
 const placeholder = document.getElementById('placeholder');
-const wordLayer   = document.getElementById('word-layer');
+
+// Per-page DOM + rendered state, keyed by 1-indexed page number.
+// Pages get an empty wrap+canvas+wordLayer up front; the canvas + word
+// boxes are populated lazily by IntersectionObserver as they scroll into
+// view. Active page (the one being played) always points at this map.
+const pageDOM = {};   // { [pageNum]: { wrap, canvas, wordLayer, rendered, wordBoxes, speakable, speakMap } }
+let visiblePage = 1;
 const prevBtn     = document.getElementById('prevBtn');
 const nextBtn     = document.getElementById('nextBtn');
 const pageInput   = document.getElementById('pageInput');
-const playBtn     = document.getElementById('playBtn');
+const playMain    = document.getElementById('playMain');
 const stopBtn     = document.getElementById('stopBtn');
-const loadBtn     = document.getElementById('loadBtn');
 const fileInput   = document.getElementById('pdfFile');
 const dropLabel   = document.getElementById('dropLabel');
 const rateSlider  = document.getElementById('rateSlider');
@@ -466,11 +554,13 @@ document.getElementById('voiceSelect').addEventListener('change', e => {
 });
 
 /* ═══════════════════════════════════════════════════════
-   File input + drag-and-drop
+   File input + drag-and-drop  (auto-load on pick)
 ═══════════════════════════════════════════════════════ */
-fileInput.addEventListener('change', () => {
+fileInput.addEventListener('change', async () => {
     const f = fileInput.files[0];
-    if (f) { dropLabel.innerHTML = `<span class="fname">${f.name}</span>`; loadBtn.disabled = false; }
+    if (!f) return;
+    dropLabel.innerHTML = `<span class="fname">${f.name}</span>`;
+    await loadPDF(f);
 });
 
 viewer.addEventListener('dragover',  e => { e.preventDefault(); viewer.classList.add('drag-over'); });
@@ -481,10 +571,47 @@ viewer.addEventListener('drop', async e => {
     const f = e.dataTransfer.files[0];
     if (f && f.type === 'application/pdf') {
         dropLabel.innerHTML = `<span class="fname">${f.name}</span>`;
-        loadBtn.disabled = false;
         await loadPDF(f);
     }
 });
+
+/* Play button icon reflects current playback state */
+function updatePlayIcon() {
+    if (!playMain) return;
+    playMain.textContent = (player.paused || player.ended) ? '▶' : '⏸';
+}
+player.addEventListener('play',  updatePlayIcon);
+player.addEventListener('pause', updatePlayIcon);
+player.addEventListener('ended', updatePlayIcon);
+
+/* ═══════════════════════════════════════════════════════
+   Auto-idle: dim the floating sidebar when the reader isn't
+   interacting, so the PDF gets full visual focus.
+═══════════════════════════════════════════════════════ */
+const sidebarEl = document.querySelector('.sidebar');
+const IDLE_MS   = 2500;
+const EDGE_PX   = 60;            // mouse within this many px above the bar wakes the sidebar
+let idleTimer   = null;
+
+function pokeIdle() {
+    if (!pdfPages.length) return;       // keep visible until a PDF is loaded
+    sidebarEl.classList.remove('idle');
+    clearTimeout(idleTimer);
+    idleTimer = setTimeout(() => sidebarEl.classList.add('idle'), IDLE_MS);
+}
+
+document.addEventListener('mousemove', e => {
+    // Always wake when mouse is near the bottom bar or hovering over it.
+    const barTop = sidebarEl.getBoundingClientRect().top;
+    if (e.clientY > barTop - EDGE_PX) pokeIdle();
+});
+document.addEventListener('keydown',   pokeIdle);
+viewer.addEventListener('scroll',      pokeIdle);
+sidebarEl.addEventListener('mouseenter', () => {
+    sidebarEl.classList.remove('idle');
+    clearTimeout(idleTimer);
+});
+sidebarEl.addEventListener('mouseleave', pokeIdle);
 
 /* ═══════════════════════════════════════════════════════
    Rate slider
@@ -507,15 +634,47 @@ player.addEventListener('play', () => { player.playbackRate = playbackRate; });
 ═══════════════════════════════════════════════════════ */
 function wordWeight(text) { return text.length + 1; }
 
-function buildOffsets(startIdx) {
+function buildOffsets(startIdx, endIdx) {
     activeOffsets = [];
     activeTotal   = 0;
-    for (let i = startIdx; i < speakable.length; i++) {
+    for (let i = startIdx; i <= endIdx; i++) {
         const fullIdx = speakMap[i];
         const w = pdfPages[currentPage - 1].words[fullIdx];
         activeTotal += wordWeight(w.text);
         activeOffsets.push(activeTotal);
     }
+}
+
+/* ═══════════════════════════════════════════════════════
+   Paragraph detection (groups consecutive words by PyMuPDF block)
+═══════════════════════════════════════════════════════ */
+function buildParagraphs(words) {
+    const out = [];
+    let curBlock = null, startSI = null, endSI = -1, parts = [];
+    let si = 0;
+    for (const w of words) {
+        if (w.skip) continue;
+        const blk = w.block;
+        if (curBlock === null || blk !== curBlock) {
+            if (startSI !== null && parts.length) {
+                out.push({ startSpeakIdx: startSI, endSpeakIdx: endSI, text: parts.join(' ') });
+            }
+            curBlock = blk;
+            startSI = si;
+            parts = [];
+        }
+        parts.push(w.text);
+        endSI = si;
+        si++;
+    }
+    if (startSI !== null && parts.length) {
+        out.push({ startSpeakIdx: startSI, endSpeakIdx: endSI, text: parts.join(' ') });
+    }
+    return out;
+}
+
+function paragraphAt(speakIdx) {
+    return paragraphs.findIndex(p => speakIdx >= p.startSpeakIdx && speakIdx <= p.endSpeakIdx);
 }
 
 function bsearch(target) {
@@ -687,11 +846,16 @@ player.addEventListener('seeked', updateHighlight);
    Page auto-advance
 ═══════════════════════════════════════════════════════ */
 player.onended = async () => {
-    if (isPlaying && currentPage < pdfPages.length) {
-        currentPage++;
-        updatePager();
-        await renderPage(currentPage);
-        generateAndPlay(currentPage, 0);
+    if (!isPlaying) return;
+    const curIdx = paragraphAt(playStartIdx);
+    if (curIdx >= 0 && curIdx < paragraphs.length - 1) {
+        const next = paragraphs[curIdx + 1];
+        generateAndPlay(currentPage, next.startSpeakIdx);
+    } else if (currentPage < pdfPages.length) {
+        const nextPage = currentPage + 1;
+        await renderPageInto(nextPage);   // ensure rendered before we walk its words
+        setActivePage(nextPage);
+        generateAndPlay(nextPage, 0);
     } else {
         isPlaying = false;
         stopLoop();
@@ -711,60 +875,120 @@ function updatePager() {
 }
 
 async function prevPage() {
-    if (currentPage <= 1) return;
-    currentPage--; updatePager(); prefetchState = null;
-    await renderPage(currentPage);
-    if (isPlaying) generateAndPlay(currentPage, 0);
+    const target = Math.max(1, (isPlaying ? currentPage : visiblePage) - 1);
+    await goToPage(target);
 }
 async function nextPage() {
-    if (currentPage >= pdfPages.length) return;
-    currentPage++; updatePager(); prefetchState = null;
-    await renderPage(currentPage);
-    if (isPlaying) generateAndPlay(currentPage, 0);
+    const target = Math.min(pdfPages.length, (isPlaying ? currentPage : visiblePage) + 1);
+    await goToPage(target);
 }
 async function jumpToPage() {
     let n = parseInt(pageInput.value);
     if (isNaN(n)) n = 1;
     n = Math.max(1, Math.min(n, pdfPages.length));
-    currentPage = n; updatePager(); prefetchState = null;
-    await renderPage(currentPage);
-    if (isPlaying) generateAndPlay(currentPage, 0);
+    await goToPage(n);
+}
+
+async function goToPage(n) {
+    prefetchState = null;
+    await renderPageInto(n);
+    if (isPlaying) {
+        player.pause();
+        setActivePage(n);
+        generateAndPlay(n, 0);
+    } else {
+        scrollToPage(n);
+        visiblePage = n;
+        pageInput.value = n;
+    }
 }
 
 /* ═══════════════════════════════════════════════════════
-   PDF rendering + word overlay
+   Continuous-scroll PDF rendering
+
+   buildPageContainers() — once per loaded PDF: creates an empty
+       page-wrap (with correct dimensions but no canvas content) for
+       every page and registers them with an IntersectionObserver.
+
+   renderPageInto(n)    — renders the canvas + word-overlay for page n
+       on demand (when scrolled near, or when audio advances to it).
+       Idempotent: second call is a no-op.
+
+   setActivePage(n)     — switches the singular "active page" state
+       (wordBoxes / speakable / speakMap / paragraphs / sentenceRanges)
+       to point at page n's data. Adds .active class to its wrap.
 ═══════════════════════════════════════════════════════ */
-async function renderPage(pageNum) {
-    if (!pdfDoc) return;
-    currentHLIdx = -1; hlWord = []; hlSent = [];
-    wordBoxes = []; speakable = []; speakMap = [];
+const SCALE = 1.6;
+let pageObserver = null;
 
-    wordLayer.innerHTML = '';
+function buildPageContainers() {
+    // Wipe any previous PDF's containers (preserve placeholder + toast +
+    // help button — they're siblings inside #viewer).
+    Object.values(pageDOM).forEach(pd => pd.wrap.remove());
+    for (const k of Object.keys(pageDOM)) delete pageDOM[k];
 
-    const page     = await pdfDoc.getPage(pageNum);
-    const scale    = 1.6;
-    const vp       = page.getViewport({ scale });
-    const canvas   = document.getElementById('pdf-canvas');
-    const ctx      = canvas.getContext('2d');
-    const dpr      = window.devicePixelRatio || 1;
+    if (pageObserver) pageObserver.disconnect();
+    pageObserver = new IntersectionObserver(entries => {
+        for (const e of entries) {
+            if (e.isIntersecting) {
+                const n = parseInt(e.target.dataset.page);
+                renderPageInto(n);
+            }
+        }
+    }, { root: viewer, rootMargin: '600px 0px 600px 0px' });
 
-    canvas.width  = Math.floor(vp.width  * dpr);
-    canvas.height = Math.floor(vp.height * dpr);
-    canvas.style.width  = Math.floor(vp.width)  + 'px';
-    canvas.style.height = Math.floor(vp.height) + 'px';
-    pageWrap.style.width  = Math.floor(vp.width)  + 'px';
-    pageWrap.style.height = Math.floor(vp.height) + 'px';
+    for (let i = 1; i <= pdfPages.length; i++) {
+        const pdData = pdfPages[i - 1];
+        const w = Math.floor(pdData.width  * SCALE);
+        const h = Math.floor(pdData.height * SCALE);
+
+        const wrap = document.createElement('div');
+        wrap.className = 'page-wrap';
+        wrap.dataset.page = i;
+        wrap.style.width  = w + 'px';
+        wrap.style.height = h + 'px';
+
+        const canvas = document.createElement('canvas');
+        canvas.className = 'pdf-canvas';
+
+        const wordLayer = document.createElement('div');
+        wordLayer.className = 'word-layer';
+
+        wrap.appendChild(canvas);
+        wrap.appendChild(wordLayer);
+        viewer.appendChild(wrap);
+
+        pageDOM[i] = { wrap, canvas, wordLayer, rendered: false };
+        pageObserver.observe(wrap);
+    }
+}
+
+async function renderPageInto(pageNum) {
+    const pd = pageDOM[pageNum];
+    if (!pd || pd.rendered) return;
+    pd.rendered = true;   // claim now so concurrent observer hits don't double-render
+
+    const page = await pdfDoc.getPage(pageNum);
+    const vp   = page.getViewport({ scale: SCALE });
+    const dpr  = window.devicePixelRatio || 1;
+
+    pd.canvas.width  = Math.floor(vp.width  * dpr);
+    pd.canvas.height = Math.floor(vp.height * dpr);
+    pd.canvas.style.width  = Math.floor(vp.width)  + 'px';
+    pd.canvas.style.height = Math.floor(vp.height) + 'px';
+    pd.wrap.style.width    = Math.floor(vp.width)  + 'px';
+    pd.wrap.style.height   = Math.floor(vp.height) + 'px';
 
     const tf = dpr !== 1 ? [dpr,0,0,dpr,0,0] : null;
-    await page.render({ canvasContext:ctx, transform:tf, viewport:vp }).promise;
+    await page.render({ canvasContext: pd.canvas.getContext('2d'), transform: tf, viewport: vp }).promise;
 
-    const pd    = pdfPages[pageNum - 1];
-    if (!pd) return;
-    const xS    = vp.width  / pd.width;
-    const yS    = vp.height / pd.height;
+    const pdData = pdfPages[pageNum - 1];
+    const xS = vp.width  / pdData.width;
+    const yS = vp.height / pdData.height;
 
-    const frag  = document.createDocumentFragment();
-    pd.words.forEach((w, fullIdx) => {
+    const frag = document.createDocumentFragment();
+    const wb = [], sp = [], sm = [];
+    pdData.words.forEach((w, fullIdx) => {
         const span = document.createElement('span');
         span.className = 'word-box' + (w.skip ? ' skip-word' : '');
         span.style.left   = (w.x0 * xS) + 'px';
@@ -775,22 +999,89 @@ async function renderPage(pageNum) {
         span.textContent  = w.text;
 
         if (!w.skip) {
-            const si = speakMap.length;
-            speakMap.push(fullIdx);
-            speakable.push(span);
+            sm.push(fullIdx);
+            sp.push(span);
+            // Capture pageNum + the in-progress speakMap so the click finds
+            // the right speakable index even if the user clicked a skip word.
+            const myFullIdx = fullIdx;
+            let _wClickTimer = null;
             span.addEventListener('click', () => {
-                const target = speakMap.findIndex(fi => fi >= fullIdx);
-                if (target >= 0) playFromWord(target);
+                clearTimeout(_wClickTimer);
+                const target = sm.findIndex(fi => fi >= myFullIdx);
+                _wClickTimer = setTimeout(() => {
+                    if (target >= 0) playFromWord(pageNum, target);
+                }, 220);
+            });
+            span.addEventListener('dblclick', () => {
+                // Cancel the pending single-click playback
+                clearTimeout(_wClickTimer);
+                // Build a short snippet around the double-clicked word as note context
+                const pageWords = pdfPages[pageNum - 1].words;
+                const s = Math.max(0, myFullIdx - 4);
+                const e = Math.min(pageWords.length - 1, myFullIdx + 5);
+                const snippet = pageWords.slice(s, e + 1)
+                    .filter(w => !w.skip).map(w => w.text).join(' ');
+                startNote(snippet);
             });
         }
-
-        wordBoxes.push(span);
+        wb.push(span);
         frag.appendChild(span);
     });
-    wordLayer.appendChild(frag);
+    pd.wordLayer.appendChild(frag);
 
-    // Sentence ranges over speakable words
-    sentenceRanges = computeSentences(pd.words.filter(w => !w.skip));
+    pd.wordBoxes = wb;
+    pd.speakable = sp;
+    pd.speakMap  = sm;
+
+    // If this page is the active one, refresh the singular state references.
+    if (pageNum === currentPage) setActivePage(pageNum, /*scroll*/ false);
+}
+
+function setActivePage(pageNum, scroll = true) {
+    if (pageNum < 1 || pageNum > pdfPages.length) return;
+    // Visual marker on the wrap.
+    Object.values(pageDOM).forEach(pd => pd.wrap.classList.remove('active'));
+    const pd = pageDOM[pageNum];
+    if (pd) pd.wrap.classList.add('active');
+
+    currentPage = pageNum;
+    wordBoxes = (pd && pd.wordBoxes) || [];
+    speakable = (pd && pd.speakable) || [];
+    speakMap  = (pd && pd.speakMap)  || [];
+
+    const pdData = pdfPages[pageNum - 1];
+    sentenceRanges = pdData ? computeSentences(pdData.words.filter(w => !w.skip)) : [];
+    paragraphs     = pdData ? buildParagraphs(pdData.words) : [];
+
+    currentHLIdx = -1;
+    hlWord = []; hlSent = [];
+
+    if (scroll && pd && pd.wrap) {
+        pd.wrap.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+    updatePager();
+}
+
+// Keep the page input in sync with what the user is looking at, so jump
+// targets feel natural.
+viewer.addEventListener('scroll', () => {
+    let topPage = visiblePage;
+    for (let i = 1; i <= pdfPages.length; i++) {
+        const pd = pageDOM[i];
+        if (!pd) continue;
+        const r = pd.wrap.getBoundingClientRect();
+        const vr = viewer.getBoundingClientRect();
+        if (r.bottom - vr.top > 80) { topPage = i; break; }
+    }
+    if (topPage !== visiblePage) {
+        visiblePage = topPage;
+        if (!isPlaying) pageInput.value = topPage;
+    }
+});
+
+function scrollToPage(n) {
+    const pd = pageDOM[n];
+    if (pd && pd.wrap) pd.wrap.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 /* ═══════════════════════════════════════════════════════
@@ -803,10 +1094,9 @@ async function loadPDF(explicitFile) {
     if (isPlaying) stopAudio();
     prefetchState = null;
 
-    loadBtn.disabled = true;
+    playMain.disabled = true;
     setStatus('Loading…', 'busy');
     placeholder.style.display = 'none';
-    pageWrap.style.display = 'block';
 
     currentFileName = file.name;
     currentFileSize = file.size;
@@ -823,11 +1113,16 @@ async function loadPDF(explicitFile) {
         document.getElementById('totalPages').textContent = data.total_pages;
 
         currentPage = 1;
+        visiblePage = 1;
         pageInput.disabled = false;
-        playBtn.disabled   = false;
+        playMain.disabled  = false;
         stopBtn.disabled   = false;
-        updatePager();
-        await renderPage(1);
+
+        buildPageContainers();
+        // Render page 1 eagerly so something appears immediately;
+        // the rest stream in as the IntersectionObserver fires.
+        await renderPageInto(1);
+        setActivePage(1, /*scroll*/ false);
 
         setStatus('Loaded. Click a word or press Play.', 'ok');
 
@@ -840,7 +1135,7 @@ async function loadPDF(explicitFile) {
         console.error(e);
         setStatus('Error loading PDF.', 'err');
     } finally {
-        loadBtn.disabled = false;
+        playMain.disabled = false;
     }
 }
 
@@ -850,16 +1145,24 @@ async function loadPDF(explicitFile) {
 async function playFromPage() {
     if (!pdfPages.length) return alert('Load a PDF first.');
     isPlaying = true;
-    await renderPage(currentPage);
-    generateAndPlay(currentPage, 0);
+    // Start from the page the user is *looking at* unless they're already
+    // playing — in which case `currentPage` already names the active page.
+    const target = isPlaying && currentPage ? currentPage : visiblePage;
+    await renderPageInto(target);
+    setActivePage(target);
+    generateAndPlay(target, 0);
 }
 
-function playFromWord(speakIdx) {
+async function playFromWord(pageNum, speakIdx) {
     if (!pdfPages.length) return;
     player.pause();
     isPlaying = true;
+    if (pageNum !== currentPage) {
+        await renderPageInto(pageNum);
+        setActivePage(pageNum, /*scroll*/ false);
+    }
     clearHighlights(); currentHLIdx = -1;
-    generateAndPlay(currentPage, speakIdx);
+    generateAndPlay(pageNum, speakIdx);
 }
 
 function stopAudio() {
@@ -890,29 +1193,41 @@ function togglePlayPause() {
 ═══════════════════════════════════════════════════════ */
 async function generateAndPlay(pageNum, startIdx) {
     const pd = pdfPages[pageNum - 1];
-    if (!pd || !speakable.length) {
+    if (!pd || !speakable.length || !paragraphs.length) {
         setStatus(`Skipping empty page ${pageNum}…`, 'busy');
         player.dispatchEvent(new Event('ended'));
         return;
     }
 
     playStartIdx = Math.max(0, Math.min(startIdx | 0, speakable.length - 1));
-    const text   = speakMap.slice(playStartIdx).map(fi => pd.words[fi].text).join(' ').trim();
+
+    // Snap end-of-range to the paragraph containing playStartIdx so each
+    // synth call covers one paragraph (or the tail of one if user clicked
+    // mid-paragraph). On audio-end, onended advances to the next paragraph.
+    const paraIdx = paragraphAt(playStartIdx);
+    if (paraIdx < 0) { player.dispatchEvent(new Event('ended')); return; }
+    playEndIdx = paragraphs[paraIdx].endSpeakIdx;
+
+    const text = speakMap.slice(playStartIdx, playEndIdx + 1)
+                         .map(fi => pd.words[fi].text)
+                         .join(' ').trim();
 
     if (!text) {
-        setStatus(`Skipping empty page ${pageNum}…`, 'busy');
+        setStatus(`Skipping empty paragraph…`, 'busy');
         player.dispatchEvent(new Event('ended'));
         return;
     }
 
-    buildOffsets(playStartIdx);
+    buildOffsets(playStartIdx, playEndIdx);
     speechStart = 0; speechEnd = 0; internalGaps = []; speechOnlyDuration = 0;
 
     const isPremium = selectedVoice.engine !== 'piper';
     setStatus(`Generating page ${pageNum}…`, 'busy');
 
     let blob, win;
-    const usePrefetch = prefetchState && prefetchState.page === pageNum && startIdx === 0;
+    const usePrefetch = prefetchState
+        && prefetchState.page === pageNum
+        && prefetchState.startSpeakIdx === playStartIdx;
 
     if (usePrefetch) {
         blob = prefetchState.blob;
@@ -966,24 +1281,42 @@ async function generateAndPlay(pageNum, startIdx) {
 
     setStatus(`Playing page ${pageNum}.`, 'busy');
     saveProgress(pageNum, playStartIdx);
-    prefetchNextPage(pageNum);   // fire-and-forget
+    prefetchNextPara(pageNum, playStartIdx);   // fire-and-forget
 }
 
 /* ═══════════════════════════════════════════════════════
    Pre-fetch
 ═══════════════════════════════════════════════════════ */
-async function prefetchNextPage(pageNum) {
-    const next = pageNum + 1;
-    if (next > pdfPages.length) return;
-    const pd = pdfPages[next - 1];
-    if (!pd) return;
-    const text = pd.words.filter(w => !w.skip).map(w => w.text).join(' ').trim();
-    if (!text) return;
+async function prefetchNextPara(pageNum, curStartIdx) {
+    // Resolve "what plays after the currently-playing paragraph":
+    //   1) next paragraph on this page, if any
+    //   2) first paragraph of the next page, otherwise
+    let nextPage, nextStartIdx, nextText;
+
+    const curIdx = paragraphAt(curStartIdx);
+    if (curIdx >= 0 && curIdx < paragraphs.length - 1) {
+        const np      = paragraphs[curIdx + 1];
+        nextPage      = pageNum;
+        nextStartIdx  = np.startSpeakIdx;
+        nextText      = np.text;
+    } else if (pageNum < pdfPages.length) {
+        const pd      = pdfPages[pageNum];          // pageNum is 1-indexed; this is the next page
+        if (!pd) return;
+        const npParas = buildParagraphs(pd.words);
+        if (!npParas.length) return;
+        nextPage      = pageNum + 1;
+        nextStartIdx  = npParas[0].startSpeakIdx;   // 0
+        nextText      = npParas[0].text;
+    } else {
+        return; // last paragraph of last page
+    }
+
+    if (!nextText) return;
     try {
-        const res  = await fetch('/synthesize', {
+        const res = await fetch('/synthesize', {
             method: 'POST', headers: {'Content-Type':'application/json'},
             body: JSON.stringify({
-                text,
+                text:   nextText,
                 voice:  selectedVoice.name,
                 engine: selectedVoice.engine,
             })
@@ -991,8 +1324,8 @@ async function prefetchNextPage(pageNum) {
         if (!res.ok) return;
         const blob = await res.blob();
         const win  = await detectSpeechWindow(blob);
-        prefetchState = { page: next, blob, win };
-    } catch(_) { /* silent — main playback continues */ }
+        prefetchState = { page: nextPage, startSpeakIdx: nextStartIdx, blob, win };
+    } catch(_) { /* silent */ }
 }
 
 /* ═══════════════════════════════════════════════════════
@@ -1026,8 +1359,8 @@ async function resumePlayback() {
     if (!savedProgress) return;
     const p = Math.min(savedProgress.page, pdfPages.length);
     if (savedProgress.rate) changeRate(savedProgress.rate - playbackRate);
-    currentPage = p; updatePager();
-    await renderPage(p);
+    await renderPageInto(p);
+    setActivePage(p);
     isPlaying = true;
     generateAndPlay(p, savedProgress.wordIdx || 0);
 }
@@ -1056,8 +1389,188 @@ window.addEventListener('keydown', e => {
         case 'ArrowDown':  e.preventDefault(); changeRate(-0.1);    break;
         case 's': case 'S': case 'Escape': stopAudio(); break;
         case '?':           showHelp(); break;
+        case 'n': case 'N': toggleNote(); break;
+        case 'm': case 'M': notesPanel.classList.contains('open') ? closeNotesPanel() : openNotesPanel(); break;
     }
 });
+
+/* ═══════════════════════════════════════════════════════
+   Voice Notes
+   — Floating 🎤 button in the viewer (below the ? button)
+   — Uses Web Speech API: continuous=false so it AUTO-COMMITS
+     after a few seconds of silence — no second click needed.
+   — Click 🎤 to start; speak; pause → note saves itself.
+   — Click again mid-sentence to commit early.
+   — Click 🎤 while idle (notes exist) → open notes panel.
+═══════════════════════════════════════════════════════ */
+let voiceNotes     = _loadNotes();
+let noteRecognizer = null;
+let isRecording    = false;
+
+const noteBtn      = document.getElementById('noteBtn');
+const notesPanel   = document.getElementById('notesPanel');
+const notesList    = document.getElementById('notesList');
+const notesEmpty   = document.getElementById('notesEmpty');
+const noteCntBadge = document.getElementById('noteCntBadge');
+
+function _loadNotes() {
+    try { return JSON.parse(localStorage.getItem('simpletts-notes') || '[]'); }
+    catch(_) { return []; }
+}
+function _saveNotes() {
+    localStorage.setItem('simpletts-notes', JSON.stringify(voiceNotes));
+}
+function _noteContext() {
+    if (hlSent.length)
+        return hlSent.map(s => s.title || s.textContent || '').join(' ').trim().slice(0, 140);
+    return '';
+}
+
+/* Single smart click handler:
+   - If recording  → stop early (commits whatever was heard)
+   - If idle + notes panel open → close it
+   - If idle + notes exist → open notes panel
+   - If idle + no notes → start recording                      */
+function handleMicClick() {
+    if (isRecording)                          { stopNote(); return; }
+    if (notesPanel.classList.contains('open')){ closeNotesPanel(); return; }
+    if (voiceNotes.length)                    { openNotesPanel(); return; }
+    startNote();
+}
+
+/* N key: always toggle recording */
+function toggleNote() { isRecording ? stopNote() : startNote(); }
+
+function startNote(presetCtx) {
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) {
+        setStatus('Voice notes need Chrome or Edge.', 'err');
+        return;
+    }
+
+    const snapPage = isPlaying ? currentPage : visiblePage;
+    const snapCtx  = (presetCtx !== undefined) ? presetCtx : _noteContext();
+
+    isRecording = true;
+    closeNotesPanel();
+    noteBtn.classList.add('recording');
+    noteBtn.title = 'Listening… click to finish early (N)';
+
+    /* Show live feedback in the status bar while speaking */
+    const prevStatus = statusTxt.textContent;
+    setStatus('🔴 Listening…', 'busy');
+
+    noteRecognizer = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+    noteRecognizer.continuous     = false;   // KEY: auto-commits after silence
+    noteRecognizer.interimResults = true;
+    noteRecognizer.lang           = 'en-US';
+
+    let committed = false;
+    let finalText = '';
+
+    noteRecognizer.onresult = e => {
+        let interim = '';
+        for (const r of e.results) {
+            if (r.isFinal) finalText += (finalText ? ' ' : '') + r[0].transcript.trim();
+            else           interim   = r[0].transcript;
+        }
+        /* Show what's being heard in the status bar */
+        statusTxt.textContent = '🔴 ' + (finalText + (interim ? ' ' + interim : '') || 'Listening…');
+    };
+
+    noteRecognizer.onend = () => {
+        if (!committed) { committed = true; _finalize(finalText, snapPage, snapCtx, prevStatus); }
+    };
+
+    noteRecognizer.onerror = e => {
+        if (e.error === 'no-speech') {
+            if (!committed) { committed = true; _finalize('', snapPage, snapCtx, prevStatus); }
+        } else {
+            console.warn('Note recognition:', e.error);
+            if (!committed) { committed = true; _finalize(finalText, snapPage, snapCtx, prevStatus); }
+        }
+    };
+
+    noteRecognizer.start();
+}
+
+function stopNote() {
+    if (noteRecognizer) { noteRecognizer.stop(); noteRecognizer = null; }
+    /* _finalize will be called via onend */
+}
+
+function _finalize(text, page, context, prevStatus) {
+    isRecording = false;
+    noteRecognizer = null;
+    noteBtn.classList.remove('recording');
+    noteBtn.title = 'Record voice note (N)';
+
+    /* Restore status bar */
+    statusTxt.textContent = prevStatus || 'Ready.';
+    statusEl.classList.remove('busy');
+
+    text = (text || '').trim();
+    if (!text) { setStatus(prevStatus || 'Ready.'); return; }
+
+    voiceNotes.unshift({
+        id: Date.now(), text, page, context,
+        ts: new Date().toLocaleString([], { month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' })
+    });
+    _saveNotes();
+    _renderNotes();
+    _updateBadge();
+    openNotesPanel();
+}
+
+function _renderNotes() {
+    notesList.innerHTML = '';
+    notesEmpty.style.display = voiceNotes.length ? 'none' : '';
+    voiceNotes.forEach(n => {
+        const d = document.createElement('div');
+        d.className = 'note-item';
+        d.innerHTML =
+            `<div class="note-meta"><span>p.${n.page}</span><span>·</span><span>${n.ts}</span></div>` +
+            `<div>${n.text}</div>` +
+            (n.context ? `<div class="note-ctx">📌 "${n.context.length>90 ? n.context.slice(0,90)+'…' : n.context}"</div>` : '');
+        notesList.appendChild(d);
+    });
+}
+
+function _updateBadge() {
+    const c = voiceNotes.length;
+    noteCntBadge.textContent = c || '';
+    noteCntBadge.classList.toggle('show', c > 0);
+}
+
+function openNotesPanel()  { _renderNotes(); notesPanel.classList.add('open'); }
+function closeNotesPanel() { notesPanel.classList.remove('open'); }
+
+function clearNotes() {
+    voiceNotes = []; _saveNotes(); _renderNotes(); _updateBadge(); closeNotesPanel();
+}
+
+function copyNotes() {
+    if (!voiceNotes.length) return;
+    const txt = voiceNotes
+        .map(n => `[p.${n.page} — ${n.ts}]${n.context ? '\nContext: "'+n.context+'"' : ''}\n${n.text}`)
+        .join('\n\n---\n\n');
+    navigator.clipboard.writeText(txt).then(() => {
+        document.getElementById('toastMsg').textContent = 'Notes copied!';
+        const t = document.getElementById('toast');
+        t.style.display = 'flex';
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => { t.style.display='none'; }, 2000);
+    });
+}
+
+/* Close notes panel on outside click */
+document.addEventListener('click', e => {
+    if (!notesPanel.classList.contains('open')) return;
+    if (!notesPanel.contains(e.target) && e.target !== noteBtn && !noteBtn.contains(e.target))
+        closeNotesPanel();
+});
+
+_updateBadge();
 
 /* ═══════════════════════════════════════════════════════
    Init
