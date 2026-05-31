@@ -11,6 +11,9 @@ import re
 import threading
 import uuid
 import unicodedata
+import html as _html
+import secrets
+from datetime import datetime, timezone
 from collections import Counter, OrderedDict
 
 _env_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env")
@@ -247,6 +250,81 @@ async def get_prefs(authorization: str | None = Header(None)):
     user = _require_user(authorization)
     prefs = auth.get_preferences(int(user["sub"]))
     return {"preferences": prefs}
+
+
+# ── Mnfz Desktop waitlist ─────────────────────────────────────────────────────
+
+_EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+
+
+class WaitlistRequest(BaseModel):
+    name:  str = ""
+    email: str = ""
+
+
+@app.get("/desktop")
+def desktop_page():
+    """Coming-soon landing page for Mnfz Desktop with a waitlist form."""
+    with open("desktop.html", "r", encoding="utf-8") as f:
+        html = f.read()
+    return HTMLResponse(html, headers={"Cache-Control": "no-store, max-age=0"})
+
+
+@app.post("/waitlist")
+async def join_waitlist(req: WaitlistRequest):
+    name = (req.name or "").strip()
+    email = (req.email or "").strip().lower()
+    if len(name) < 2:
+        return JSONResponse({"error": "الرجاء إدخال اسمك."}, status_code=400)
+    if not _EMAIL_RE.match(email):
+        return JSONResponse({"error": "الرجاء إدخال بريد إلكتروني صحيح."}, status_code=400)
+    status = auth.add_waitlist_entry(name, email, "mnfz-desktop")
+    return {"ok": True, "status": status}
+
+
+@app.get("/admin/waitlist")
+def admin_waitlist(key: str = ""):
+    """Admin view of waitlist sign-ups. Gated by the ADMIN_KEY env var."""
+    admin_key = os.environ.get("ADMIN_KEY", "")
+    if not admin_key or not secrets.compare_digest(key, admin_key):
+        raise HTTPException(status_code=403, detail="Forbidden")
+
+    entries = auth.get_waitlist_entries()
+    rows = []
+    for i, e in enumerate(entries, 1):
+        try:
+            dt = datetime.fromtimestamp(e.get("created_at") or 0, tz=timezone.utc)
+            when = dt.strftime("%Y-%m-%d %H:%M UTC")
+        except Exception:
+            when = ""
+        rows.append(
+            f"<tr><td>{i}</td>"
+            f"<td>{_html.escape(str(e.get('name','')))}</td>"
+            f"<td>{_html.escape(str(e.get('email','')))}</td>"
+            f"<td>{_html.escape(str(e.get('product','')))}</td>"
+            f"<td>{_html.escape(when)}</td></tr>"
+        )
+    body = "".join(rows) or '<tr><td colspan="5" style="text-align:center;color:#888;padding:24px">لا توجد تسجيلات بعد.</td></tr>'
+    page = f"""<!doctype html><html lang="ar" dir="rtl"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>قائمة انتظار منفذ لسطح المكتب</title>
+<style>
+  body{{font-family:system-ui,-apple-system,'Segoe UI',Tahoma,sans-serif;background:#0f1722;color:#e8eef4;margin:0;padding:32px}}
+  h1{{font-size:1.4rem;margin:0 0 4px}}
+  .sub{{color:#9fb0c0;font-size:.9rem;margin-bottom:24px}}
+  table{{width:100%;border-collapse:collapse;background:#16212e;border-radius:12px;overflow:hidden}}
+  th,td{{padding:11px 14px;text-align:right;border-bottom:1px solid #233140;font-size:.9rem}}
+  th{{background:#1d2a39;color:#c9a227;font-weight:700}}
+  tr:last-child td{{border-bottom:none}}
+  td{{color:#dce6ef}}
+  .count{{display:inline-block;background:#c9a227;color:#0f1722;font-weight:800;border-radius:999px;padding:2px 12px;font-size:.85rem}}
+</style></head><body>
+<h1>قائمة انتظار — منفذ لسطح المكتب</h1>
+<div class="sub">إجمالي التسجيلات: <span class="count">{len(entries)}</span></div>
+<table><thead><tr><th>#</th><th>الاسم</th><th>البريد الإلكتروني</th><th>المنتج</th><th>تاريخ التسجيل</th></tr></thead>
+<tbody>{body}</tbody></table>
+</body></html>"""
+    return HTMLResponse(page, headers={"Cache-Control": "no-store, max-age=0"})
 
 
 # ── Routes ────────────────────────────────────────────────────────────────────

@@ -25,7 +25,7 @@ RUN mkdir -p models && \
     wget -q -O models/ar_JO-kareem-medium.onnx.json \
       https://huggingface.co/rhasspy/piper-voices/resolve/main/ar/ar_JO/kareem/medium/ar_JO-kareem-medium.onnx.json
 
-COPY app.py azure_voice.py kokoro_voice.py index.html auth.py ./
+COPY app.py azure_voice.py kokoro_voice.py index.html desktop.html auth.py ./
 
 EXPOSE 8001
 

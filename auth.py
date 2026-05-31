@@ -16,7 +16,12 @@ JWT_SECRET = os.environ.get("JWT_SECRET", os.environ.get("AZURE_SPEECH_KEY", os.
 JWT_ALGORITHM = "HS256"
 JWT_EXPIRY_HOURS = 72
 
-DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "mnfz_users.db")
+# Data dir is overridable so the SQLite DB can live on a persistent volume
+# (Azure Files) instead of the ephemeral container filesystem. Defaults to the
+# app directory for local development.
+_DATA_DIR = os.environ.get("MNFZ_DATA_DIR", os.path.dirname(os.path.abspath(__file__)))
+os.makedirs(_DATA_DIR, exist_ok=True)
+DB_PATH = os.path.join(_DATA_DIR, "mnfz_users.db")
 
 # ── SQLite ────────────────────────────────────────────────────────────────────
 
@@ -70,6 +75,14 @@ def init_db():
             theme      TEXT DEFAULT 'light',
             lang       TEXT DEFAULT 'ar',
             updated_at REAL NOT NULL DEFAULT (unixepoch())
+        );
+
+        CREATE TABLE IF NOT EXISTS waitlist (
+            id          INTEGER PRIMARY KEY AUTOINCREMENT,
+            name        TEXT NOT NULL,
+            email       TEXT NOT NULL UNIQUE,
+            product     TEXT NOT NULL DEFAULT 'mnfz-desktop',
+            created_at  REAL NOT NULL DEFAULT (unixepoch())
         );
     """)
     conn.commit()
@@ -231,5 +244,36 @@ def get_preferences(user_id: int) -> dict:
             "SELECT * FROM user_preferences WHERE user_id = ?", (user_id,)
         ).fetchone()
         return dict(row) if row else {"voice": "", "engine": "piper", "theme": "light", "lang": "ar"}
+    finally:
+        conn.close()
+
+# ── Waitlist (product launch sign-ups) ────────────────────────────────────────
+
+def add_waitlist_entry(name: str, email: str, product: str = "mnfz-desktop") -> str:
+    """Add a sign-up. Returns 'added' or 'exists' (email already on the list)."""
+    conn = get_db()
+    try:
+        cur = conn.execute(
+            "INSERT OR IGNORE INTO waitlist (name, email, product) VALUES (?, ?, ?)",
+            (name.strip(), email.strip().lower(), product),
+        )
+        conn.commit()
+        return "added" if cur.rowcount > 0 else "exists"
+    finally:
+        conn.close()
+
+def get_waitlist_entries(product: str | None = None) -> list[dict]:
+    conn = get_db()
+    try:
+        if product:
+            rows = conn.execute(
+                "SELECT * FROM waitlist WHERE product = ? ORDER BY created_at DESC",
+                (product,),
+            ).fetchall()
+        else:
+            rows = conn.execute(
+                "SELECT * FROM waitlist ORDER BY created_at DESC"
+            ).fetchall()
+        return [dict(r) for r in rows]
     finally:
         conn.close()

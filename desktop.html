@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>منفذ لسطح المكتب — قريباً</title>
+<meta name="description" content="وكيل ذكاء اصطناعي محلي يحمي خصوصيتك أثناء معالجة مستنداتك الحساسة لإتاحة التعليم الرقمي.">
+<style>
+  :root{
+    --bg-a:#0b1320; --bg-b:#101d2e; --bg-c:#0a1019;
+    --ink:#eef3f8; --ink-soft:#9fb2c4; --ink-faint:#6f8298;
+    --gold:#e6c053; --gold-deep:#c9a227;
+    --card:rgba(22,33,48,.72); --card-border:rgba(230,192,83,.18);
+    --field:rgba(8,14,22,.6); --field-border:rgba(159,178,196,.22);
+    --ok:#46c08d;
+    --font:'Segoe UI',system-ui,-apple-system,'Tahoma','Noto Sans Arabic',sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    font-family:var(--font); color:var(--ink); min-height:100vh;
+    background:radial-gradient(1100px 720px at 80% -10%, #15263b 0%, transparent 60%),
+               radial-gradient(900px 600px at 10% 110%, #11203a 0%, transparent 60%),
+               linear-gradient(160deg, var(--bg-a) 0%, var(--bg-b) 52%, var(--bg-c) 100%);
+    line-height:1.7; -webkit-font-smoothing:antialiased; overflow-x:hidden;
+    display:flex; flex-direction:column; align-items:center;
+    padding:32px 20px 56px;
+  }
+  /* Slow drifting aurora glow for a "premium teaser" feel */
+  .aurora{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+  .aurora span{position:absolute;border-radius:50%;filter:blur(70px);opacity:.35;
+    animation:drift 18s ease-in-out infinite}
+  .aurora .g1{width:420px;height:420px;background:#1f6f8b;top:-120px;right:-80px}
+  .aurora .g2{width:380px;height:380px;background:var(--gold-deep);bottom:-140px;left:-60px;
+    animation-delay:-6s;opacity:.18}
+  .aurora .g3{width:300px;height:300px;background:#2a9d8f;top:40%;left:55%;animation-delay:-11s;opacity:.16}
+  @keyframes drift{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(24px,-26px) scale(1.12)}}
+
+  .wrap{position:relative;z-index:1;width:100%;max-width:680px}
+
+  .topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:40px}
+  .brand{display:flex;align-items:center;gap:11px;text-decoration:none;color:inherit}
+  .brand .logo{width:40px;height:40px;border-radius:11px;display:grid;place-items:center;
+    font-size:1.25rem;font-weight:800;color:#0b1320;
+    background:linear-gradient(150deg,var(--gold) 0%,var(--gold-deep) 100%);
+    box-shadow:0 8px 22px rgba(230,192,83,.28)}
+  .brand .b-name{font-weight:800;font-size:1.05rem}
+  .brand .b-sub{display:block;font-size:.72rem;color:var(--ink-faint);font-weight:500}
+  .back-link{color:var(--ink-soft);text-decoration:none;font-size:.85rem;
+    border:1px solid var(--field-border);border-radius:10px;padding:7px 13px;transition:.2s}
+  .back-link:hover{color:var(--ink);border-color:var(--gold-deep)}
+
+  .badge{display:inline-flex;align-items:center;gap:8px;font-size:.78rem;font-weight:700;
+    color:var(--gold);background:rgba(230,192,83,.1);border:1px solid var(--card-border);
+    border-radius:999px;padding:6px 15px;margin-bottom:22px;letter-spacing:.02em}
+  .badge .dot{width:7px;height:7px;border-radius:50%;background:var(--gold);
+    box-shadow:0 0 0 0 rgba(230,192,83,.6);animation:pulse 2s infinite}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(230,192,83,.55)}70%{box-shadow:0 0 0 9px rgba(230,192,83,0)}100%{box-shadow:0 0 0 0 rgba(230,192,83,0)}}
+
+  h1{font-size:clamp(1.9rem,5.4vw,2.9rem);line-height:1.25;margin:0 0 16px;font-weight:800;letter-spacing:-.01em}
+  h1 .accent{color:var(--gold)}
+  .lede{font-size:clamp(1rem,2.6vw,1.18rem);color:var(--ink-soft);margin:0 0 30px;max-width:600px}
+
+  .features{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:36px}
+  .feat{background:rgba(255,255,255,.03);border:1px solid var(--field-border);border-radius:14px;
+    padding:16px 14px;text-align:center}
+  .feat .ico{font-size:1.5rem;margin-bottom:8px;display:block}
+  .feat strong{display:block;font-size:.92rem;margin-bottom:3px}
+  .feat span{font-size:.78rem;color:var(--ink-faint);line-height:1.5}
+
+  .card{background:var(--card);border:1px solid var(--card-border);border-radius:20px;
+    padding:28px 26px;backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+    box-shadow:0 24px 60px rgba(0,0,0,.4)}
+  .card h2{margin:0 0 6px;font-size:1.2rem}
+  .card p.hint{margin:0 0 20px;color:var(--ink-soft);font-size:.9rem}
+
+  form{display:flex;flex-direction:column;gap:13px}
+  .field label{display:block;font-size:.82rem;color:var(--ink-soft);margin-bottom:6px;font-weight:600}
+  .field input{width:100%;padding:13px 15px;border-radius:12px;border:1px solid var(--field-border);
+    background:var(--field);color:var(--ink);font-family:inherit;font-size:.98rem;transition:.2s}
+  .field input:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 3px rgba(230,192,83,.16)}
+  .field input::placeholder{color:var(--ink-faint)}
+
+  button.submit{margin-top:6px;padding:14px 18px;border:none;border-radius:12px;cursor:pointer;
+    font-family:inherit;font-size:1rem;font-weight:800;color:#0b1320;
+    background:linear-gradient(150deg,var(--gold) 0%,var(--gold-deep) 100%);
+    box-shadow:0 10px 26px rgba(230,192,83,.28);transition:filter .15s,transform .08s}
+  button.submit:hover:not(:disabled){filter:brightness(1.07)}
+  button.submit:active:not(:disabled){transform:translateY(1px)}
+  button.submit:disabled{opacity:.6;cursor:wait}
+
+  .msg{margin-top:14px;font-size:.9rem;text-align:center;min-height:1.2em}
+  .msg.err{color:#f0a3a0}
+  .privacy-note{margin-top:16px;font-size:.78rem;color:var(--ink-faint);text-align:center}
+
+  /* Success state */
+  .success{text-align:center;padding:10px 4px}
+  .success .check{width:64px;height:64px;border-radius:50%;margin:0 auto 18px;display:grid;place-items:center;
+    font-size:1.9rem;color:#0b1320;background:linear-gradient(150deg,var(--ok),#2f9d75);
+    box-shadow:0 12px 30px rgba(70,192,141,.35)}
+  .success h2{font-size:1.3rem;margin:0 0 10px}
+  .success p{color:var(--ink-soft);margin:0 auto;max-width:420px}
+  .hidden{display:none}
+
+  footer{position:relative;z-index:1;margin-top:44px;color:var(--ink-faint);font-size:.78rem;text-align:center}
+
+  @media(max-width:560px){
+    .features{grid-template-columns:1fr;gap:10px}
+    .feat{display:flex;align-items:center;gap:12px;text-align:right;padding:13px 15px}
+    .feat .ico{margin:0;font-size:1.4rem}
+    .topbar{margin-bottom:28px}
+  }
+</style>
+</head>
+<body>
+
+<div class="aurora"><span class="g1"></span><span class="g2"></span><span class="g3"></span></div>
+
+<div class="wrap">
+
+  <div class="topbar">
+    <a class="brand" href="/" aria-label="منفذ">
+      <span class="logo">م</span>
+      <span class="b-name">منفذ<span class="b-sub">mnfz.tech</span></span>
+    </a>
+    <a class="back-link" href="/">← العودة للرئيسية</a>
+  </div>
+
+  <span class="badge"><span class="dot"></span> قريباً — منتج جديد</span>
+
+  <h1>منفذ <span class="accent">لسطح المكتب</span></h1>
+  <p class="lede">
+    وكيل ذكاء اصطناعي يعمل <strong>محليًا على جهازك</strong> ليحمي خصوصيتك أثناء
+    معالجة مستنداتك الحسّاسة — صُمِّم لإتاحة التعليم الرقمي للجميع، دون أن تغادر
+    بياناتك حاسوبك أبدًا.
+  </p>
+
+  <div class="features">
+    <div class="feat"><span class="ico">🔒</span><strong>خصوصية كاملة</strong><span>تتم المعالجة محليًا، لا ترفع ملفاتك إلى أي خادم.</span></div>
+    <div class="feat"><span class="ico">🧠</span><strong>ذكاء اصطناعي محلي</strong><span>وكيل ذكي يعمل دون اتصال بالإنترنت.</span></div>
+    <div class="feat"><span class="ico">♿</span><strong>إتاحة التعليم</strong><span>يجعل المستندات في متناول الجميع.</span></div>
+  </div>
+
+  <div class="card">
+    <div id="formView">
+      <h2>كن أول من يجرّبه</h2>
+      <p class="hint">سنطلق المنتج قريبًا. أضِف اسمك وبريدك إلى قائمة الانتظار وسنراسلك فور جاهزيته — كأحد أوائل المستخدمين.</p>
+      <form id="waitForm" novalidate>
+        <div class="field">
+          <label for="name">الاسم</label>
+          <input type="text" id="name" name="name" placeholder="اسمك الكامل" autocomplete="name" required>
+        </div>
+        <div class="field">
+          <label for="email">البريد الإلكتروني</label>
+          <input type="email" id="email" name="email" placeholder="you@example.com" autocomplete="email" inputmode="email" dir="ltr" required>
+        </div>
+        <button type="submit" class="submit" id="submitBtn">انضم لقائمة الانتظار</button>
+        <div class="msg" id="msg"></div>
+      </form>
+      <div class="privacy-note">نستخدم بريدك فقط لإشعارك عند الإطلاق. لن نشاركه مع أي جهة.</div>
+    </div>
+
+    <div id="successView" class="success hidden">
+      <div class="check">✓</div>
+      <h2 id="successTitle">تم تسجيلك بنجاح!</h2>
+      <p>شكرًا لانضمامك. ستصلك رسالة على بريدك الإلكتروني فور إطلاق <strong>منفذ لسطح المكتب</strong>، وستكون من أوائل من يحصل على حق الوصول.</p>
+    </div>
+  </div>
+
+  <footer>© 2026 منفذ · mnfz.tech</footer>
+</div>
+
+<script>
+  const form = document.getElementById('waitForm');
+  const msg = document.getElementById('msg');
+  const btn = document.getElementById('submitBtn');
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    msg.textContent = '';
+    msg.className = 'msg';
+    const name = document.getElementById('name').value.trim();
+    const email = document.getElementById('email').value.trim();
+
+    if (name.length < 2) { msg.textContent = 'الرجاء إدخال اسمك.'; msg.className = 'msg err'; return; }
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { msg.textContent = 'الرجاء إدخال بريد إلكتروني صحيح.'; msg.className = 'msg err'; return; }
+
+    btn.disabled = true;
+    const original = btn.textContent;
+    btn.textContent = 'جارٍ التسجيل…';
+    try {
+      const res = await fetch('/waitlist', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        msg.textContent = data.error || 'تعذّر التسجيل، حاول مرة أخرى.';
+        msg.className = 'msg err';
+        btn.disabled = false; btn.textContent = original;
+        return;
+      }
+      if (data.status === 'exists') {
+        document.getElementById('successTitle').textContent = 'أنت مسجّل بالفعل!';
+      }
+      document.getElementById('formView').classList.add('hidden');
+      document.getElementById('successView').classList.remove('hidden');
+    } catch (err) {
+      msg.textContent = 'تعذّر الاتصال بالخادم، حاول مرة أخرى.';
+      msg.className = 'msg err';
+      btn.disabled = false; btn.textContent = original;
+    }
+  });
+</script>
+</body>
+</html>

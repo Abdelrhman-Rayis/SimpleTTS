@@ -715,3 +715,61 @@ bar is hidden in home-mode and needs the backend for reading mode), but the
 reasoning is verified against the layout.
 
 **Files changed:** `index.html`, `DEVLOG.md`
+
+---
+
+## Session 19 — Mnfz Desktop waitlist + persistent DB volume
+
+**Request:** add a hero button for a future product "منفذ لسطح المكتب" (Mnfz
+Desktop — a local AI agent that protects privacy while processing sensitive
+documents for digital-education accessibility). The button opens a new
+coming-soon page (Arabic, similar but more interesting design) with a waitlist
+form (name + email). Submissions are saved to a database, and the owner gets an
+admin link to view sign-ups.
+
+**New page:** `desktop.html` — standalone Arabic RTL landing page sharing the
+navy/gold palette but with a more premium "teaser" feel (animated aurora glow,
+"قريباً" badge, feature cards, glass waitlist card). Posts `{name,email}` to
+`POST /waitlist`; on success swaps to an inline success state (and says "أنت
+مسجّل بالفعل" if the email already existed). Served at `GET /desktop`.
+
+**Backend (`app.py`):**
+- `GET /desktop` → serves `desktop.html`.
+- `POST /waitlist` → validates name (≥2 chars) + email (regex), stores via
+  `auth.add_waitlist_entry`. Returns `{ok, status: 'added'|'exists'}`.
+- `GET /admin/waitlist?key=...` → renders an HTML table of sign-ups. Gated by the
+  `ADMIN_KEY` env var using `secrets.compare_digest` (403 if unset/mismatch). The
+  key is **never** committed (the repo is public) — it lives only in the
+  container's env vars.
+
+**DB (`auth.py`):**
+- New `waitlist` table (id, name, email UNIQUE, product, created_at).
+- `add_waitlist_entry(name, email, product)` — `INSERT OR IGNORE`, lowercases
+  email + trims name, returns `'added'`/`'exists'`. `get_waitlist_entries()`.
+- **Made the DB path configurable:** `DB_PATH` now uses `MNFZ_DATA_DIR` env var
+  (defaults to the app dir for local dev) so SQLite can live on a persistent
+  volume.
+
+**Frontend (`index.html`):** added a third hero button — an `<a href="/desktop">`
+with a `.hero-btn.desktop` teal-gradient style and a gold "قريباً" badge.
+
+**Infra — persistent volume (NEW, important):** previously the SQLite DB lived
+in the ephemeral container filesystem and was **wiped on every deploy** (user
+accounts too). For a waitlist that's fatal. Fixed by mounting an Azure Files
+share at `/data` and setting `MNFZ_DATA_DIR=/data`:
+- Storage account `mnfzdata53b33548` (RG `simpletts-rg`, East US), file share
+  `mnfzdata`. (Had to register the `Microsoft.Storage` resource provider first.)
+- Registered the share with env `simpletts-env` and added a volume + mount to the
+  `mnfz` container app, plus env vars `MNFZ_DATA_DIR=/data` and `ADMIN_KEY`.
+- The CI deploy step is `az containerapp update --image` only, so it preserves
+  the volume + env config across future deploys.
+- **One-time effect:** existing logged-in users live in the old ephemeral DB and
+  will need to re-login once after this change (their session moves to the fresh
+  persistent DB). From now on, accounts + waitlist persist across deploys.
+
+**Admin link:** `https://mnfz.tech/admin/waitlist?key=<ADMIN_KEY>` (key stored in
+the container env + `/tmp/mnfz_admin_key.txt` locally, not in git).
+
+**Files changed:** `app.py`, `auth.py`, `index.html`, `desktop.html`,
+`Dockerfile`, `DEVLOG.md` + Azure infra (storage account, env storage, container
+app volume/env).
