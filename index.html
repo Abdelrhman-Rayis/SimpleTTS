@@ -545,10 +545,47 @@
         .github-btn:active{transform:scale(.96)}
         .github-btn svg{width:18px;height:18px;flex-shrink:0}
 
-        /* Google Sign-In + User */
-        .google-signin{display:flex;align-items:center;height:38px}
-        .google-signin iframe{margin:0 !important}
-        .user-avatar{display:inline-flex;align-items:center;justify-content:center;
+        /* Sign-in button (themed) */
+        .signin-btn{display:inline-flex;align-items:center;justify-content:center;
+                    gap:7px;height:38px;padding:0 16px;border-radius:var(--r-s);
+                    background:var(--primary);border:none;
+                    color:#fff;cursor:pointer;font-family:var(--font-ui);
+                    font-size:.82rem;font-weight:600;
+                    box-shadow:0 4px 10px rgba(31,42,50,.12);
+                    transition:background .2s ease,transform .12s ease}
+        .signin-btn:hover{background:var(--primary-h)}
+        .signin-btn:active{transform:scale(.96)}
+
+        /* Auth Modal */
+        .auth-modal-overlay{position:fixed;inset:0;z-index:9999;
+                            background:var(--modal-overlay);
+                            display:flex;align-items:center;justify-content:center;
+                            backdrop-filter:blur(4px)}
+        .auth-modal{position:relative;background:var(--card-bg);
+                    border-radius:20px;padding:44px 40px 36px;
+                    max-width:400px;width:90%;text-align:center;
+                    box-shadow:0 24px 64px rgba(0,0,0,.24);
+                    animation:modalIn .25s ease}
+        @keyframes modalIn{from{opacity:0;transform:translateY(16px) scale(.97)}to{opacity:1;transform:translateY(0) scale(1)}}
+        .auth-modal-close{position:absolute;top:14px;right:16px;
+                          width:32px;height:32px;border-radius:50%;
+                          border:none;background:transparent;color:var(--subtle);
+                          font-size:1.1rem;cursor:pointer;
+                          display:flex;align-items:center;justify-content:center;
+                          transition:background .15s ease,color .15s ease}
+        .auth-modal-close:hover{background:var(--muted);color:var(--text)}
+        .auth-modal-icon{width:48px;height:48px;margin:0 auto 18px;
+                         color:var(--primary);opacity:.8}
+        .auth-modal-icon svg{width:100%;height:100%}
+        .auth-modal-title{font-family:var(--font-display);font-size:1.25rem;
+                          font-weight:700;color:var(--home-headline);margin-bottom:8px}
+        .auth-modal-sub{font-family:var(--font-ui);font-size:.85rem;
+                        color:var(--subtle);margin-bottom:28px;line-height:1.5}
+        .auth-modal-google{display:flex;justify-content:center;margin-bottom:20px}
+        .auth-modal-note{font-family:var(--font-ui);font-size:.72rem;
+                         color:var(--subtle);opacity:.7}
+
+        /* User avatar + menu */
                      width:38px;height:38px;padding:0;border-radius:50%;
                      background:var(--card-bg);border:1px solid var(--card-border);
                      cursor:pointer;overflow:hidden;position:relative;
@@ -1095,7 +1132,10 @@
                     <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
                     <span>GitHub</span>
                 </a>
-                <div class="google-signin" id="googleSignIn"></div>
+                <button class="signin-btn" id="signinBtn" type="button"
+                        onclick="openAuthModal()" title="تسجيل الدخول بحساب قوقل">
+                    <span>تسجيل الدخول</span>
+                </button>
                 <button class="user-avatar" id="userAvatar" style="display:none"
                         title="الحساب" aria-label="الحساب" onclick="toggleUserMenu()">
                     <img id="userAvatarImg" src="" alt="" width="28" height="28">
@@ -3669,6 +3709,14 @@ try { _authUser = JSON.parse(localStorage.getItem('mnfz_user') || 'null'); } cat
 
 function isSignedIn() { return !!_authToken && !!_authUser; }
 
+function openAuthModal() {
+    document.getElementById('authModalOverlay').style.display = '';
+}
+
+function closeAuthModal() {
+    document.getElementById('authModalOverlay').style.display = 'none';
+}
+
 function handleGoogleCredential(response) {
     fetch('/auth/google', {
         method: 'POST',
@@ -3684,24 +3732,25 @@ function handleGoogleCredential(response) {
             localStorage.setItem('mnfz_user', JSON.stringify(data.user));
             updateAuthUI();
             syncUserDocs();
+            closeAuthModal();
         }
     })
     .catch(err => console.error('Google auth error:', err));
 }
 
 function updateAuthUI() {
-    const signIn = document.getElementById('googleSignIn');
+    const signinBtn = document.getElementById('signinBtn');
     const avatar = document.getElementById('userAvatar');
     const avatarImg = document.getElementById('userAvatarImg');
     if (isSignedIn()) {
-        if (signIn) signIn.style.display = 'none';
+        if (signinBtn) signinBtn.style.display = 'none';
         if (avatar) {
             avatar.style.display = '';
             avatarImg.src = _authUser.picture || '';
             avatarImg.alt = _authUser.name;
         }
     } else {
-        if (signIn) signIn.style.display = '';
+        if (signinBtn) signinBtn.style.display = '';
         if (avatar) avatar.style.display = 'none';
         document.getElementById('userMenu').style.display = 'none';
     }
@@ -3781,6 +3830,14 @@ document.addEventListener('click', e => {
     }
 });
 
+// Close auth modal on overlay click
+document.getElementById('authModalOverlay').addEventListener('click', function(e) {
+    if (e.target === this) closeAuthModal();
+});
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeAuthModal();
+});
+
 // Init Google Identity Services
 window.addEventListener('load', () => {
     updateAuthUI();
@@ -3794,9 +3851,9 @@ window.addEventListener('load', () => {
             context: 'signin'
         });
         google.accounts.id.renderButton(
-            document.getElementById('googleSignIn'),
-            { theme: 'outline', size: 'medium', text: 'signin_with', shape: 'rectangular',
-              width: 180, locale: 'ar' }
+            document.getElementById('authModalGoogleBtn'),
+            { theme: 'outline', size: 'large', text: 'signin_with', shape: 'rectangular',
+              width: 280, locale: 'ar' }
         );
         if (isSignedIn()) {
             google.accounts.id.prompt();
@@ -3804,5 +3861,22 @@ window.addEventListener('load', () => {
     }
 });
 </script>
+
+<!-- Auth Modal -->
+<div class="auth-modal-overlay" id="authModalOverlay" style="display:none">
+    <div class="auth-modal">
+        <button class="auth-modal-close" onclick="closeAuthModal()" aria-label="إغلاق">✕</button>
+        <div class="auth-modal-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>
+            </svg>
+        </div>
+        <h2 class="auth-modal-title">تسجيل الدخول إلى منفذ</h2>
+        <p class="auth-modal-sub">احفظ ملفاتك وتقدّم قراءتك عبر جميع أجهزتك</p>
+        <div class="auth-modal-google" id="authModalGoogleBtn"></div>
+        <p class="auth-modal-note">نستخدم Google فقط — لا كلمات مرور، لا حسابات جديدة</p>
+    </div>
+</div>
+
 </body>
 </html>
