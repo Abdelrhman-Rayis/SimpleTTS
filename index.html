@@ -3731,7 +3731,7 @@ function handleGoogleCredential(response) {
     fetch('/auth/google', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ credential: response.credential })
+        body: JSON.stringify({ credential: response.credential, nonce: response.nonce || '' })
     })
     .then(r => r.json())
     .then(data => {
@@ -3882,7 +3882,9 @@ function startGoogleLogin() {
                 const credential = params.get('id_token') || params.get('access_token');
                 popup.close();
                 if (credential) {
-                    handleGoogleCredential({ credential: credential });
+                    const nonce = localStorage.getItem('mnfz_nonce') || '';
+                    localStorage.removeItem('mnfz_nonce');
+                    handleGoogleCredential({ credential: credential, nonce: nonce });
                 }
             }
         } catch(e) {

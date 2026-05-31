@@ -129,12 +129,17 @@ def piper_synth(text: str, voice: str, output_path: str) -> None:
 
 class GoogleAuthRequest(BaseModel):
     credential: str
+    nonce: str = ""
 
 @app.post("/auth/google")
 async def google_auth(req: GoogleAuthRequest):
     payload = auth.verify_google_token(req.credential)
     if payload is None:
         return JSONResponse({"error": "Invalid Google token"}, status_code=401)
+
+    # Verify nonce if provided
+    if req.nonce and payload.get("nonce") != req.nonce:
+        return JSONResponse({"error": "Nonce mismatch"}, status_code=401)
 
     user = auth.get_or_create_user(payload)
     token = auth.create_app_token(user)
