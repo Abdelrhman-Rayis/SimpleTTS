@@ -3760,6 +3760,8 @@ function handleGoogleCredential(response) {
             updateAuthUI();
             syncUserDocs();
             closeAuthModal();
+        } else {
+            console.error('Google auth failed:', data && data.error ? data.error : data);
         }
     })
     .catch(err => console.error('Google auth error:', err));
@@ -3901,9 +3903,14 @@ document.addEventListener('click', e => {
     }
 });
 
-// Close auth modal on overlay click
-document.getElementById('authModalOverlay').addEventListener('click', function(e) {
-    if (e.target === this) closeAuthModal();
+// Close auth modal on overlay click.
+// Delegated on `document` so this never throws at parse time — the modal
+// element is defined later in the file (after this <script>), so a direct
+// getElementById(...).addEventListener here would hit null and abort the
+// rest of the script (including checkGoogleRedirect, breaking sign-in).
+document.addEventListener('click', function(e) {
+    const overlay = document.getElementById('authModalOverlay');
+    if (overlay && e.target === overlay) closeAuthModal();
 });
 document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') closeAuthModal();

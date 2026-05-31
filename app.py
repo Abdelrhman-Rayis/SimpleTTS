@@ -1,4 +1,4 @@
-from fastapi import FastAPI, UploadFile, File, BackgroundTasks, HTTPException
+from fastapi import FastAPI, UploadFile, File, BackgroundTasks, HTTPException, Header
 from fastapi.responses import HTMLResponse, FileResponse, JSONResponse, Response
 from pydantic import BaseModel
 from pydub import AudioSegment, effects
@@ -162,12 +162,12 @@ def _require_user(authorization: str | None) -> dict:
     return payload
 
 @app.get("/auth/me")
-async def get_me(authorization: str | None = None):
+async def get_me(authorization: str | None = Header(None)):
     user = _require_user(authorization)
     return {"user": user}
 
 @app.get("/user/docs")
-async def list_user_docs(authorization: str | None = None):
+async def list_user_docs(authorization: str | None = Header(None)):
     user = _require_user(authorization)
     docs = auth.get_user_docs(int(user["sub"]))
     return {"docs": docs}
@@ -179,7 +179,7 @@ class SaveDocRequest(BaseModel):
     file_size: int = 0
 
 @app.post("/user/docs")
-async def save_user_doc(req: SaveDocRequest, authorization: str | None = None):
+async def save_user_doc(req: SaveDocRequest, authorization: str | None = Header(None)):
     user = _require_user(authorization)
     auth.save_user_doc(int(user["sub"]), req.doc_id, req.filename,
                        req.page_count, req.file_size)
@@ -191,14 +191,14 @@ class SaveProgressRequest(BaseModel):
     scroll_offset: float = 0
 
 @app.post("/user/progress")
-async def save_progress(req: SaveProgressRequest, authorization: str | None = None):
+async def save_progress(req: SaveProgressRequest, authorization: str | None = Header(None)):
     user = _require_user(authorization)
     auth.save_reading_progress(int(user["sub"]), req.doc_id,
                                req.current_page, req.scroll_offset)
     return {"ok": True}
 
 @app.get("/user/progress/{doc_id}")
-async def get_progress(doc_id: str, authorization: str | None = None):
+async def get_progress(doc_id: str, authorization: str | None = Header(None)):
     user = _require_user(authorization)
     progress = auth.get_reading_progress(int(user["sub"]), doc_id)
     return {"progress": progress}
@@ -211,13 +211,13 @@ class SavePreferencesRequest(BaseModel):
     lang: str = "ar"
 
 @app.post("/user/preferences")
-async def save_prefs(req: SavePreferencesRequest, authorization: str | None = None):
+async def save_prefs(req: SavePreferencesRequest, authorization: str | None = Header(None)):
     user = _require_user(authorization)
     auth.save_preferences(int(user["sub"]), req.voice, req.engine, req.theme, req.lang)
     return {"ok": True}
 
 @app.get("/user/preferences")
-async def get_prefs(authorization: str | None = None):
+async def get_prefs(authorization: str | None = Header(None)):
     user = _require_user(authorization)
     prefs = auth.get_preferences(int(user["sub"]))
     return {"preferences": prefs}
