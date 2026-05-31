@@ -674,3 +674,44 @@ before their first use (just above `currentLibraryOwner`), removing the late
 - `app.py`: `DELETE /user/docs/{doc_id}` route (auth-required).
 
 **Files changed:** `index.html`, `app.py`, `auth.py`, `DEVLOG.md`
+
+---
+
+## Session 18 — Mobile responsiveness (player) + home footer
+
+**Request:** make the design responsive on mobile (elements like the PDF sound
+player disappear when opened on a phone), and add a footer on the main page with
+the GitHub button in it.
+
+**Cause of the disappearing player:** the `.sidebar` (the frosted-glass player
+bar) is `position:absolute; bottom:14px` relative to `.app`. On desktop `.app`
+is viewport-height (`body{height:100vh;overflow:hidden}`), so the bar sits at the
+bottom of the screen. But the `@media(max-width:900px)` rules switch to
+`body{overflow:auto;height:auto}` so the body scrolls and `.app` grows to the
+full page height — meaning `bottom:8px` anchored the bar to the bottom of the
+*entire page*, not the viewport. It only became visible after scrolling all the
+way down, so it looked like it had vanished while reading.
+
+**Fix (`index.html`):**
+- `@media(max-width:900px) .sidebar` → `position:fixed` (pins to the viewport so
+  the player stays visible while scrolling pages). Also added
+  `justify-content:center` and `max-height:42vh;overflow-y:auto` as a safety net
+  in case the wrapped bar gets tall. The transport (play/stop) is the first card
+  so it always lands on the first visible row.
+- Added a `<footer class="home-footer">` inside `.library-home`, after
+  `#mixSection`: brand block (منفذ + tagline) on one side, the GitHub button on
+  the other, plus a centered copyright line. New `.home-footer*` styles; stacks
+  to a column at `max-width:560px`.
+- **Moved** the GitHub button out of `.home-topbar` into the footer (per the
+  request — "put the github button too there"). Removed the now-orphaned
+  `.github-btn{order:6}` rule from the 900px media query.
+
+**Verified:** served `index.html` locally, loaded in Chrome at a phone-width
+window. Footer renders correctly in RTL (brand right, GitHub left, copyright
+centered); topbar is clean with no GitHub button; no layout breakage. The
+`mixSection` stays hidden when logged out (Session 15 behavior, unchanged). The
+sidebar `position:fixed` fix is CSS-only and not testable on the home page (the
+bar is hidden in home-mode and needs the backend for reading mode), but the
+reasoning is verified against the layout.
+
+**Files changed:** `index.html`, `DEVLOG.md`

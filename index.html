@@ -544,6 +544,16 @@
         .github-btn:active{transform:scale(.96)}
         .github-btn svg{width:18px;height:18px;flex-shrink:0}
 
+        /* ── Home footer ── */
+        .home-footer{margin-top:40px;padding:26px 4px 6px;border-top:1px solid var(--card-border)}
+        .home-footer-inner{display:flex;align-items:center;justify-content:space-between;
+                           gap:16px;flex-wrap:wrap}
+        .home-footer-brand{display:flex;flex-direction:column;gap:3px}
+        .home-footer-brand strong{font-size:1.05rem;font-weight:800;color:var(--home-headline)}
+        .home-footer-brand span{font-size:.82rem;color:var(--subtle)}
+        .home-footer-bottom{margin-top:18px;font-size:.76rem;color:var(--subtle);
+                            text-align:center;opacity:.85}
+
         /* Sign-in button (themed) */
         .signin-btn{display:inline-flex;align-items:center;justify-content:center;
                     gap:7px;height:38px;padding:0 16px;border-radius:var(--r-s);
@@ -1032,7 +1042,11 @@
         @media(max-width:900px){
             body{overflow:auto;height:auto}
             .app{flex-direction:column}
-            .sidebar{bottom:8px;left:8px;right:8px;padding:7px 9px;gap:5px;flex-wrap:wrap;align-items:center}
+            /* Pin to the viewport (not .app, which grows to full page height once
+               body scrolls) so the player stays visible while reading. */
+            .sidebar{position:fixed;bottom:8px;left:8px;right:8px;padding:7px 9px;gap:5px;
+                     flex-wrap:wrap;align-items:center;justify-content:center;
+                     max-height:42vh;overflow-y:auto}
             .sidebar-brand{display:none}
             .card{padding:4px 8px;gap:7px}
             .status{margin-left:0;flex:1 1 100%;justify-content:center}
@@ -1049,7 +1063,6 @@
             .home-search{order:2;grid-column:1 / -1}
             .home-upload{order:4;flex:1}
             .theme-toggle{order:5}
-            .github-btn{order:6}
             .home-hero{grid-template-columns:1fr}
             .hero-copy{padding:22px 20px}
             .hero-copy h1{max-width:none}
@@ -1071,6 +1084,7 @@
             .hero-spotlight-card{grid-template-columns:1fr}
             .hero-spotlight-media{height:180px}
             .doc-grid,.mix-grid{grid-template-columns:1fr}
+            .home-footer-inner{flex-direction:column;align-items:flex-start;gap:14px}
         }
     </style>
 </head>
@@ -1170,11 +1184,6 @@
                     <span class="moon" aria-hidden="true">☾</span>
                     <span class="sun"  aria-hidden="true">☀</span>
                 </button>
-                <a class="github-btn" href="https://github.com/Abdelrhman-Rayis/SimpleTTS"
-                   target="_blank" rel="noopener" title="GitHub repo" aria-label="GitHub">
-                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
-                    <span>GitHub</span>
-                </a>
                 <div class="user-menu" id="userMenu" style="display:none">
                     <div class="user-menu-name" id="userMenuName"></div>
                     <div class="user-menu-email" id="userMenuEmail"></div>
@@ -1225,6 +1234,21 @@
                 </div>
                 <div class="mix-grid" id="mixGrid"></div>
             </section>
+
+            <footer class="home-footer">
+                <div class="home-footer-inner">
+                    <div class="home-footer-brand">
+                        <strong>منفذ</strong>
+                        <span>حوّل أي ملف PDF إلى جلسة قراءة مسموعة.</span>
+                    </div>
+                    <a class="github-btn" href="https://github.com/Abdelrhman-Rayis/SimpleTTS"
+                       target="_blank" rel="noopener" title="GitHub repo" aria-label="GitHub">
+                        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+                        <span>GitHub</span>
+                    </a>
+                </div>
+                <div class="home-footer-bottom">© 2026 منفذ · mnfz.tech</div>
+            </footer>
         </div>
         <div class="placeholder" id="placeholder"><span class="ico">PDF</span>لم يتم تحميل أي ملف بعد</div>
         <div class="toast" id="toast" style="display:none">
