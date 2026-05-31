@@ -3,9 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="google-client-id" content="__GOOGLE_CLIENT_ID_PLACEHOLDER__">
     <title>منفذ — mnfz.tech</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <script>pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';</script>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
     <style>
         @font-face{font-family:"Thmanyah Sans UI";src:url("https://framerusercontent.com/assets/x6EBzvXf1Fi35XhsRoHxePDVo.woff2") format("woff2");font-display:swap;font-style:normal;font-weight:400}
         @font-face{font-family:"Thmanyah Sans UI";src:url("https://framerusercontent.com/assets/oE98mOPE28KTzUeptOLRIaqW1I.woff2") format("woff2");font-display:swap;font-style:normal;font-weight:500}
@@ -543,6 +545,31 @@
         .github-btn:active{transform:scale(.96)}
         .github-btn svg{width:18px;height:18px;flex-shrink:0}
 
+        /* Google Sign-In + User */
+        .google-signin{display:flex;align-items:center;height:38px}
+        .google-signin iframe{margin:0 !important}
+        .user-avatar{display:inline-flex;align-items:center;justify-content:center;
+                     width:38px;height:38px;padding:0;border-radius:50%;
+                     background:var(--card-bg);border:1px solid var(--card-border);
+                     cursor:pointer;overflow:hidden;position:relative;
+                     box-shadow:inset 0 1px 0 var(--ctrl-highlight),0 4px 10px rgba(31,42,50,.08);
+                     transition:border-color .15s ease}
+        .user-avatar:hover{border-color:var(--primary)}
+        .user-avatar img{border-radius:50%;object-fit:cover}
+        .user-menu{position:absolute;top:56px;right:18px;z-index:999;
+                   background:var(--card-bg);border:1px solid var(--card-border);
+                   border-radius:var(--r-s);padding:16px;min-width:220px;
+                   box-shadow:var(--shadow);text-align:right}
+        .user-menu-name{font-family:var(--font-ui);font-weight:700;font-size:.95rem;
+                        color:var(--home-headline);margin-bottom:2px}
+        .user-menu-email{font-family:var(--font-ui);font-size:.78rem;
+                         color:var(--subtle);margin-bottom:14px}
+        .user-menu-signout{width:100%;padding:8px 0;border:none;border-radius:4px;
+                           background:var(--stop);color:#fff;font-family:var(--font-ui);
+                           font-size:.82rem;font-weight:600;cursor:pointer;
+                           transition:background .15s ease}
+        .user-menu-signout:hover{background:var(--stop-h)}
+
         .home-hero{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(320px,.75fr);gap:22px;
                    margin-top:26px;color:var(--text)}
         .hero-copy{display:flex;flex-direction:column;gap:14px;min-width:0;padding:34px 36px 30px;
@@ -1068,6 +1095,16 @@
                     <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
                     <span>GitHub</span>
                 </a>
+                <div class="google-signin" id="googleSignIn"></div>
+                <button class="user-avatar" id="userAvatar" style="display:none"
+                        title="الحساب" aria-label="الحساب" onclick="toggleUserMenu()">
+                    <img id="userAvatarImg" src="" alt="" width="28" height="28">
+                </button>
+                <div class="user-menu" id="userMenu" style="display:none">
+                    <div class="user-menu-name" id="userMenuName"></div>
+                    <div class="user-menu-email" id="userMenuEmail"></div>
+                    <button class="user-menu-signout" onclick="signOut()">تسجيل الخروج</button>
+                </div>
             </div>
 
             <section class="home-hero">
@@ -3621,6 +3658,151 @@ setupDiagnosticBadge();
 ═══════════════════════════════════════════════════════ */
 showLibraryHome();
 loadVoices().finally(refreshLibrary);
+
+/* ═══════════════════════════════════════════════════════
+   Google Auth
+═══════════════════════════════════════════════════════ */
+
+let _authToken = localStorage.getItem('mnfz_token') || null;
+let _authUser = null;
+try { _authUser = JSON.parse(localStorage.getItem('mnfz_user') || 'null'); } catch(_){}
+
+function isSignedIn() { return !!_authToken && !!_authUser; }
+
+function handleGoogleCredential(response) {
+    fetch('/auth/google', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ credential: response.credential })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.token) {
+            _authToken = data.token;
+            _authUser = data.user;
+            localStorage.setItem('mnfz_token', data.token);
+            localStorage.setItem('mnfz_user', JSON.stringify(data.user));
+            updateAuthUI();
+            syncUserDocs();
+        }
+    })
+    .catch(err => console.error('Google auth error:', err));
+}
+
+function updateAuthUI() {
+    const signIn = document.getElementById('googleSignIn');
+    const avatar = document.getElementById('userAvatar');
+    const avatarImg = document.getElementById('userAvatarImg');
+    if (isSignedIn()) {
+        if (signIn) signIn.style.display = 'none';
+        if (avatar) {
+            avatar.style.display = '';
+            avatarImg.src = _authUser.picture || '';
+            avatarImg.alt = _authUser.name;
+        }
+    } else {
+        if (signIn) signIn.style.display = '';
+        if (avatar) avatar.style.display = 'none';
+        document.getElementById('userMenu').style.display = 'none';
+    }
+}
+
+function toggleUserMenu() {
+    const menu = document.getElementById('userMenu');
+    menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+    document.getElementById('userMenuName').textContent = _authUser?.name || '';
+    document.getElementById('userMenuEmail').textContent = _authUser?.email || '';
+}
+
+function signOut() {
+    localStorage.removeItem('mnfz_token');
+    localStorage.removeItem('mnfz_user');
+    _authToken = null;
+    _authUser = null;
+    updateAuthUI();
+    document.getElementById('userMenu').style.display = 'none';
+    if (window.google?.accounts?.id) {
+        google.accounts.id.disableAutoSelect();
+    }
+    refreshLibrary();
+}
+
+function authFetch(url, options = {}) {
+    if (!_authToken) return Promise.reject(new Error('Not signed in'));
+    const headers = { ...(options.headers || {}), 'Authorization': 'Bearer ' + _authToken };
+    return fetch(url, { ...options, headers });
+}
+
+function syncUserDocs() {
+    if (!isSignedIn()) return;
+    // Save current doc if loaded
+    const items = JSON.parse(localStorage.getItem('fileLibrary') || '[]');
+    items.forEach(item => {
+        authFetch('/user/docs', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                doc_id: item.docId || item.id || '',
+                filename: item.name || item.title || 'Untitled',
+                page_count: item.pages || 0,
+                file_size: item.size || 0
+            })
+        }).catch(() => {});
+    });
+    // Save current progress
+    if (serverPdfDocId && currentPage) {
+        authFetch('/user/progress', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                doc_id: serverPdfDocId,
+                current_page: currentPage,
+                scroll_offset: 0
+            })
+        }).catch(() => {});
+    }
+}
+
+function loadUserProgress(docId) {
+    if (!isSignedIn()) return Promise.resolve(null);
+    return authFetch('/user/progress/' + docId)
+        .then(r => r.json())
+        .then(d => d.progress)
+        .catch(() => null);
+}
+
+// Close user menu on outside click
+document.addEventListener('click', e => {
+    const menu = document.getElementById('userMenu');
+    const avatar = document.getElementById('userAvatar');
+    if (menu && avatar && menu.style.display !== 'none' &&
+        !menu.contains(e.target) && !avatar.contains(e.target)) {
+        menu.style.display = 'none';
+    }
+});
+
+// Init Google Identity Services
+window.addEventListener('load', () => {
+    updateAuthUI();
+    const GOOGLE_CLIENT_ID = document.querySelector('meta[name="google-client-id"]')
+        ? document.querySelector('meta[name="google-client-id"]').content : '';
+    if (GOOGLE_CLIENT_ID && window.google?.accounts?.id) {
+        google.accounts.id.initialize({
+            client_id: GOOGLE_CLIENT_ID,
+            callback: handleGoogleCredential,
+            auto_select: false,
+            context: 'signin'
+        });
+        google.accounts.id.renderButton(
+            document.getElementById('googleSignIn'),
+            { theme: 'outline', size: 'medium', text: 'signin_with', shape: 'rectangular',
+              width: 180, locale: 'ar' }
+        );
+        if (isSignedIn()) {
+            google.accounts.id.prompt();
+        }
+    }
+});
 </script>
 </body>
 </html>

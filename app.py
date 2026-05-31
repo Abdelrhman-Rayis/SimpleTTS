@@ -28,6 +28,9 @@ if os.path.isfile(_env_path):
 
 import azure_voice
 import kokoro_voice
+import auth
+
+auth.init_db()
 
 app = FastAPI()
 
@@ -120,6 +123,80 @@ def piper_synth(text: str, voice: str, output_path: str) -> None:
         stdin=subprocess.PIPE,
     )
     proc.communicate(input=text.encode("utf-8"))
+
+
+# ── Auth Routes ───────────────────────────────────────────────────────────────
+
+class GoogleAuthRequest(BaseModel):
+    credential: str
+
+@app.post("/auth/google")
+async def google_auth(req: GoogleAuthRequest):
+    payload = auth.verify_google_token(req.credential)
+    if payload is None:
+        return JSONResponse({"error": "Invalid Google token"}, status_code=401)
+
+    user = auth.get_or_create_user(payload)
+    token = auth.create_app_token(user)
+    return {
+        "token": token,
+        "user": {
+            "id": user["id"],
+            "email": user["email"],
+            "name": user["name"],
+            "picture": user.get("picture", ""),
+        },
+    }
+
+def _require_user(authorization: str | None) -> dict:
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Missing token")
+    payload = auth.verify_app_token(authorization[7:])
+    if payload is None:
+        raise HTTPException(status_code=401, detail="Invalid or expired token")
+    return payload
+
+@app.get("/auth/me")
+async def get_me(authorization: str | None = None):
+    user = _require_user(authorization)
+    return {"user": user}
+
+@app.get("/user/docs")
+async def list_user_docs(authorization: str | None = None):
+    user = _require_user(authorization)
+    docs = auth.get_user_docs(int(user["sub"]))
+    return {"docs": docs}
+
+class SaveDocRequest(BaseModel):
+    doc_id: str
+    filename: str
+    page_count: int = 0
+    file_size: int = 0
+
+@app.post("/user/docs")
+async def save_user_doc(req: SaveDocRequest, authorization: str | None = None):
+    user = _require_user(authorization)
+    auth.save_user_doc(int(user["sub"]), req.doc_id, req.filename,
+                       req.page_count, req.file_size)
+    return {"ok": True}
+
+class SaveProgressRequest(BaseModel):
+    doc_id: str
+    current_page: int
+    scroll_offset: float = 0
+
+@app.post("/user/progress")
+async def save_progress(req: SaveProgressRequest, authorization: str | None = None):
+    user = _require_user(authorization)
+    auth.save_reading_progress(int(user["sub"]), req.doc_id,
+                               req.current_page, req.scroll_offset)
+    return {"ok": True}
+
+@app.get("/user/progress/{doc_id}")
+async def get_progress(doc_id: str, authorization: str | None = None):
+    user = _require_user(authorization)
+    progress = auth.get_reading_progress(int(user["sub"]), doc_id)
+    return {"progress": progress}
 
 
 # ── Routes ────────────────────────────────────────────────────────────────────

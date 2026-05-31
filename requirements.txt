@@ -16,3 +16,8 @@ piper-tts==1.2.0         # provides the `piper` CLI used by piper_synth()
 # soundfile==0.13.1
 # numpy==2.4.6
 # torch==2.12.0
+
+# --- Auth: Google OAuth + JWT ---
+google-auth==2.42.1
+PyJWT==2.10.1
+requests==2.32.5

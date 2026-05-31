@@ -8,3 +8,4 @@ server.log
 .DS_Store
 desktop.log
 .env
+mnfz_users.db
