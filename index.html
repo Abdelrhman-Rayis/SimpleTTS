@@ -596,14 +596,26 @@
         .auth-modal-note{font-family:var(--font-ui);font-size:.72rem;
                          color:var(--subtle);opacity:.7}
 
-        /* User avatar + menu */
+        /* User bar (name + files + avatar) */
+        .user-bar{display:inline-flex;align-items:center;gap:12px}
+        .user-bar-name{font-family:var(--font-ui);font-size:.82rem;font-weight:600;
+                       color:var(--home-headline);white-space:nowrap;max-width:140px;
+                       overflow:hidden;text-overflow:ellipsis}
+        .user-bar-files{display:inline-flex;align-items:center;height:34px;padding:0 14px;
+                        border-radius:var(--r-s);border:1px solid var(--card-border);
+                        background:var(--card-bg);color:var(--home-headline);
+                        cursor:pointer;font-family:var(--font-ui);font-size:.78rem;
+                        font-weight:500;text-decoration:none;
+                        transition:background .15s ease,border-color .15s ease}
+        .user-bar-files:hover{background:var(--primary-s);border-color:var(--primary)}
+        .user-avatar{display:inline-flex;align-items:center;justify-content:center;
                      width:38px;height:38px;padding:0;border-radius:50%;
                      background:var(--card-bg);border:1px solid var(--card-border);
-                     cursor:pointer;overflow:hidden;position:relative;
+                     cursor:pointer;overflow:hidden;
                      box-shadow:inset 0 1px 0 var(--ctrl-highlight),0 4px 10px rgba(31,42,50,.08);
                      transition:border-color .15s ease}
         .user-avatar:hover{border-color:var(--primary)}
-        .user-avatar img{border-radius:50%;object-fit:cover}
+        .user-avatar img{border-radius:50%;object-fit:cover;width:28px;height:28px}
         .user-menu{position:absolute;top:56px;right:18px;z-index:999;
                    background:var(--card-bg);border:1px solid var(--card-border);
                    border-radius:var(--r-s);padding:16px;min-width:220px;
@@ -1136,6 +1148,14 @@
                         onclick="openAuthModal()" title="تسجيل الدخول بحساب قوقل">
                     <span>تسجيل الدخول</span>
                 </button>
+                <div class="user-bar" id="userBar" style="display:none">
+                    <span class="user-bar-name" id="userBarName"></span>
+                    <button class="user-bar-files" type="button" onclick="openMyFiles()">ملفاتي</button>
+                    <button class="user-avatar" type="button" id="userAvatar"
+                            title="الحساب" aria-label="الحساب" onclick="toggleUserMenu()">
+                        <img id="userAvatarImg" src="" alt="" width="28" height="28">
+                    </button>
+                </div>
                 <button class="theme-toggle" type="button" onclick="toggleTheme()"
                         title="تبديل بين الوضع الفاتح والداكن" aria-label="تبديل المظهر">
                     <span class="moon" aria-hidden="true">☾</span>
@@ -1146,10 +1166,6 @@
                     <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
                     <span>GitHub</span>
                 </a>
-                <button class="user-avatar" id="userAvatar" style="display:none"
-                        title="الحساب" aria-label="الحساب" onclick="toggleUserMenu()">
-                    <img id="userAvatarImg" src="" alt="" width="28" height="28">
-                </button>
                 <div class="user-menu" id="userMenu" style="display:none">
                     <div class="user-menu-name" id="userMenuName"></div>
                     <div class="user-menu-email" id="userMenuEmail"></div>
@@ -1320,6 +1336,7 @@ function toggleTheme(){
     const next = cur === 'dark' ? 'light' : 'dark';
     document.documentElement.setAttribute('data-theme', next);
     try { localStorage.setItem('simpletts-theme', next); } catch (_) {}
+    saveUserPreferences();
 }
 
 /* ═══════════════════════════════════════════════════════
@@ -3750,18 +3767,21 @@ function handleGoogleCredential(response) {
 
 function updateAuthUI() {
     const signinBtn = document.getElementById('signinBtn');
-    const avatar = document.getElementById('userAvatar');
+    const userBar = document.getElementById('userBar');
     const avatarImg = document.getElementById('userAvatarImg');
+    const userName = document.getElementById('userBarName');
     if (isSignedIn()) {
         if (signinBtn) signinBtn.style.display = 'none';
-        if (avatar) {
-            avatar.style.display = '';
+        if (userBar) {
+            userBar.style.display = '';
             avatarImg.src = _authUser.picture || '';
             avatarImg.alt = _authUser.name;
+            userName.textContent = _authUser.name || _authUser.email;
         }
+        loadUserPreferences();
     } else {
         if (signinBtn) signinBtn.style.display = '';
-        if (avatar) avatar.style.display = 'none';
+        if (userBar) userBar.style.display = 'none';
         document.getElementById('userMenu').style.display = 'none';
     }
 }
@@ -3825,6 +3845,50 @@ function loadUserProgress(docId) {
         .then(r => r.json())
         .then(d => d.progress)
         .catch(() => null);
+}
+
+function loadUserPreferences() {
+    if (!isSignedIn()) return;
+    authFetch('/user/preferences')
+        .then(r => r.json())
+        .then(d => {
+            if (d.preferences) {
+                const p = d.preferences;
+                if (p.theme && p.theme !== (document.documentElement.getAttribute('data-theme') || 'light')) {
+                    document.documentElement.setAttribute('data-theme', p.theme);
+                }
+                if (p.voice) localStorage.setItem('mnfz_voice', p.voice);
+                if (p.engine) localStorage.setItem('mnfz_engine', p.engine);
+            }
+        })
+        .catch(() => {});
+}
+
+function saveUserPreferences() {
+    if (!isSignedIn()) return;
+    const voice = localStorage.getItem('mnfz_voice') || '';
+    const engine = localStorage.getItem('mnfz_engine') || 'piper';
+    const theme = document.documentElement.getAttribute('data-theme') || 'light';
+    authFetch('/user/preferences', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ voice, engine, theme, lang: 'ar' })
+    }).catch(() => {});
+}
+
+function openMyFiles() {
+    if (!isSignedIn()) return;
+    authFetch('/user/docs')
+        .then(r => r.json())
+        .then(d => {
+            const docs = d.docs || [];
+            const list = docs.map(doc =>
+                (doc.current_page ? '📖 ' : '📄 ') + doc.filename +
+                (doc.current_page ? ' (صفحة ' + doc.current_page + ')' : '')
+            ).join('\\n');
+            alert('ملفاتي (' + docs.length + '):\\n\\n' + (list || 'لا توجد ملفات محفوظة بعد'));
+        })
+        .catch(() => alert('تعذر تحميل الملفات'));
 }
 
 // Close user menu on outside click

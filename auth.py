@@ -62,6 +62,15 @@ def init_db():
 
         CREATE INDEX IF NOT EXISTS idx_user_docs_user ON user_docs(user_id);
         CREATE INDEX IF NOT EXISTS idx_reading_progress_user ON reading_progress(user_id);
+
+        CREATE TABLE IF NOT EXISTS user_preferences (
+            user_id    INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+            voice      TEXT DEFAULT '',
+            engine     TEXT DEFAULT 'piper',
+            theme      TEXT DEFAULT 'light',
+            lang       TEXT DEFAULT 'ar',
+            updated_at REAL NOT NULL DEFAULT (unixepoch())
+        );
     """)
     conn.commit()
     conn.close()
@@ -180,5 +189,31 @@ def get_reading_progress(user_id: int, doc_id: str) -> dict | None:
             (user_id, doc_id),
         ).fetchone()
         return dict(row) if row else None
+    finally:
+        conn.close()
+
+# ── User Preferences ────────────────────────────────────────────────────────
+
+def save_preferences(user_id: int, voice: str = "", engine: str = "piper",
+                     theme: str = "light", lang: str = "ar"):
+    conn = get_db()
+    try:
+        conn.execute(
+            """INSERT OR REPLACE INTO user_preferences
+               (user_id, voice, engine, theme, lang, updated_at)
+               VALUES (?, ?, ?, ?, ?, unixepoch())""",
+            (user_id, voice, engine, theme, lang),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+def get_preferences(user_id: int) -> dict:
+    conn = get_db()
+    try:
+        row = conn.execute(
+            "SELECT * FROM user_preferences WHERE user_id = ?", (user_id,)
+        ).fetchone()
+        return dict(row) if row else {"voice": "", "engine": "piper", "theme": "light", "lang": "ar"}
     finally:
         conn.close()

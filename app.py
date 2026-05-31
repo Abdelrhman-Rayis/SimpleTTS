@@ -204,6 +204,25 @@ async def get_progress(doc_id: str, authorization: str | None = None):
     return {"progress": progress}
 
 
+class SavePreferencesRequest(BaseModel):
+    voice: str = ""
+    engine: str = "piper"
+    theme: str = "light"
+    lang: str = "ar"
+
+@app.post("/user/preferences")
+async def save_prefs(req: SavePreferencesRequest, authorization: str | None = None):
+    user = _require_user(authorization)
+    auth.save_preferences(int(user["sub"]), req.voice, req.engine, req.theme, req.lang)
+    return {"ok": True}
+
+@app.get("/user/preferences")
+async def get_prefs(authorization: str | None = None):
+    user = _require_user(authorization)
+    prefs = auth.get_preferences(int(user["sub"]))
+    return {"preferences": prefs}
+
+
 # ── Routes ────────────────────────────────────────────────────────────────────
 
 @app.get("/")
