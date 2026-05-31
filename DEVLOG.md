@@ -570,3 +570,36 @@ in CSS pixels → soft. (The canvas fallback path already used dpr.)
 - Thumbnail request (`scale=1.4`) left as-is — it's downscaled to a JPEG anyway.
 
 **Files changed:** `/Users/rayis/SimpleTTS/index.html`, `/Users/rayis/SimpleTTS/app.py`, `/Users/rayis/SimpleTTS/DEVLOG.md`
+
+---
+
+## Session 15 — Fix silent audio (autoplay unlock)
+
+**Symptom:** "the sounds don't load" — TTS played no audio.
+
+**Diagnosis (reproduced live on mnfz.tech via Chrome MCP):**
+- Server side is fully healthy: `/voices` lists voices, `/synthesize` returns a
+  valid 92 KB `audio/wav` (Piper *and* Azure, since `AZURE_TTS_ENABLED=1`), and
+  the WAV decodes to 2.1 s mono. Container env confirmed.
+- In-page test: a gesture-less `player.play()` throws
+  `NotAllowedError: play() failed because the user didn't interact…` and the
+  AudioContext is `suspended`. With a real trusted click, the
+  `await fetch → play()` pattern works in Chrome — but Safari/iOS is stricter:
+  it blocks `<audio>.play()` that runs *after* an `await` (the fetch breaks the
+  gesture chain) unless the element was already unlocked within a gesture.
+- The three `player.play()` call sites had **no `.catch`**, so the rejection was
+  swallowed → silence with the status still showing "playing".
+
+**Fix (`index.html`):**
+- Added `unlockAudioPlayback()`: on the first `pointerdown`/`keydown`/`touchstart`
+  (capture phase) it resumes the AudioContext and plays a 1-sample silent WAV
+  on the shared `<player>` element muted, then pauses — "unlocking" the element
+  so later post-await `play()` calls are allowed for the rest of the session.
+- Added `safePlay()`: resumes the AudioContext and calls `player.play()` with a
+  `.catch`; on `NotAllowedError` it shows "اضغط في أي مكان لتشغيل الصوت" and
+  retries on the next gesture, otherwise surfaces the real error in the status.
+- Replaced the bare `player.play()` calls in `togglePlayPause` and the
+  `startPlayback` closure with `safePlay()`. (`resumePlayback`/`playFromWord`
+  route through `generateAndPlay` → `startPlayback`, so they're covered too.)
+
+**Files changed:** `/Users/rayis/SimpleTTS/index.html`, `/Users/rayis/SimpleTTS/DEVLOG.md`

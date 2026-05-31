@@ -2446,6 +2446,68 @@ function getAudioCtx() {
     return audioCtx;
 }
 
+/* ── Autoplay unlock ──────────────────────────────────────────────────────
+   Browsers (esp. Safari/iOS) block <audio>.play() unless it happens inside a
+   user gesture. We synthesize audio via `await fetch`, which breaks the gesture
+   chain, so Safari rejects the later play() and the page goes silent. Fix: on
+   the first real user interaction, "unlock" the shared <player> element by
+   playing a 1-sample silent WAV muted, and resume the AudioContext. After that,
+   the same element can be played later (post-await) for the whole session. */
+let _audioUnlocked = false;
+// 44-byte WAV header + a couple of silent 16-bit samples.
+const _SILENT_WAV = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAESsAACJWAAACABAAZGF0YQAAAAA=';
+function unlockAudioPlayback() {
+    if (_audioUnlocked) return;
+    _audioUnlocked = true;
+    try {
+        const ctx = getAudioCtx();
+        if (ctx.state === 'suspended') ctx.resume().catch(() => {});
+    } catch (_) {}
+    try {
+        const prevSrc = player.src;
+        player.muted = true;
+        player.src = _SILENT_WAV;
+        const p = player.play();
+        const finish = () => {
+            try { player.pause(); } catch (_) {}
+            player.muted = false;
+            // Don't leave the silent clip loaded if no real audio is queued yet.
+            if (!prevSrc) { try { player.removeAttribute('src'); player.load(); } catch (_) {} }
+        };
+        if (p && p.then) p.then(finish).catch(() => { player.muted = false; });
+        else finish();
+    } catch (_) { player.muted = false; }
+}
+// First-gesture unlock (capture so it runs before app click handlers).
+document.addEventListener('pointerdown', unlockAudioPlayback, { capture: true });
+document.addEventListener('keydown', unlockAudioPlayback, { capture: true });
+document.addEventListener('touchstart', unlockAudioPlayback, { capture: true });
+
+/* Play `player`, surfacing autoplay blocks instead of failing silently. If the
+   browser blocks playback, prompt the user to tap and retry on the next gesture. */
+function safePlay() {
+    try {
+        const ctx = getAudioCtx();
+        if (ctx.state === 'suspended') ctx.resume().catch(() => {});
+    } catch (_) {}
+    const p = player.play();
+    if (p && p.catch) {
+        p.catch(err => {
+            if (err && err.name === 'NotAllowedError') {
+                setStatus('اضغط في أي مكان لتشغيل الصوت', 'busy');
+                const retry = () => {
+                    document.removeEventListener('pointerdown', retry, true);
+                    player.play().catch(() => {});
+                };
+                document.addEventListener('pointerdown', retry, { once: true, capture: true });
+            } else {
+                console.error('player.play() failed:', err);
+                setStatus('تعذّر تشغيل الصوت: ' + (err && err.message ? err.message : err), 'err');
+            }
+        });
+    }
+}
+
 async function detectSpeechWindow(blob) {
     try {
         const buf     = await blob.arrayBuffer();
@@ -3012,7 +3074,7 @@ function togglePlayPause() {
         player.pause();
         setStatus('متوقف مؤقتًا.', '');
     } else if (isPlaying && !player.ended) {
-        player.play();
+        safePlay();
         setStatus(`يتم تشغيل الصفحة ${currentPage}.`, 'busy');
     } else {
         playFromPage();
@@ -3104,7 +3166,7 @@ async function generateAndPlay(pageNum, startIdx) {
     const startPlayback = () => {
         if (speechStart > 0.05) { try { player.currentTime = speechStart; } catch(_){} }
         player.playbackRate = playbackRate;
-        player.play();
+        safePlay();
         player.removeEventListener('loadedmetadata', startPlayback);
     };
     if (player.readyState >= 1) startPlayback();
