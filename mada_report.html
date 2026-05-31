@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Mnfz — Mada Innovation Award Application</title>
+<style>
+  @page { size: A4; margin: 18mm 16mm 20mm 16mm; }
+  * { box-sizing: border-box; }
+  html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body {
+    font-family: "Helvetica Neue", "Segoe UI", Arial, "Geeza Pro", "Noto Sans Arabic", sans-serif;
+    color: #1d2530; font-size: 11pt; line-height: 1.55; margin: 0;
+  }
+  .ar { direction: rtl; text-align: right; font-family: "Geeza Pro", "Noto Sans Arabic", "Segoe UI", Tahoma, sans-serif; line-height: 1.85; }
+  h1,h2,h3,h4 { color: #0f3d57; line-height: 1.25; }
+  h1 { font-size: 26pt; margin: 0 0 6px; }
+  h2 { font-size: 16pt; border-bottom: 3px solid #b8924a; padding-bottom: 6px; margin: 0 0 14px; }
+  h3 { font-size: 13pt; color: #155374; margin: 18px 0 6px; }
+  h4 { font-size: 11.5pt; color: #2a2118; margin: 12px 0 4px; }
+  p { margin: 0 0 9px; }
+  .lang-label { display:inline-block; font-size: 8.5pt; font-weight:700; letter-spacing:.5px; text-transform:uppercase; color:#fff; background:#155374; padding:2px 9px; border-radius:10px; margin-bottom:8px; }
+  .lang-label.ar-l { background:#b8924a; }
+  table { width: 100%; border-collapse: collapse; margin: 10px 0 16px; font-size: 10pt; }
+  th, td { border: 1px solid #d4cdbf; padding: 7px 9px; text-align: left; vertical-align: top; }
+  .ar table th, .ar table td { text-align: right; }
+  th { background: #f0ece1; color: #5a4427; font-weight: 700; }
+  tr:nth-child(even) td { background: #faf8f3; }
+  .section { page-break-inside: avoid; }
+  .pagebreak { page-break-before: always; }
+  .cover { text-align: center; padding-top: 70mm; page-break-after: always; }
+  .cover .tag { font-size: 13pt; color:#b8924a; font-weight:700; letter-spacing:2px; text-transform:uppercase; }
+  .cover h1 { font-size: 46pt; margin: 12px 0 4px; }
+  .cover .sub { font-size: 15pt; color:#155374; margin-top:8px; }
+  .cover .ar-title { font-size: 30pt; color:#0f3d57; margin: 26px 0 0; direction:rtl; }
+  .cover .meta { margin-top: 48px; font-size: 11pt; color:#5a4427; }
+  .meta-box { background:#f0ece1; border-left:4px solid #b8924a; padding:10px 14px; margin: 10px 0 18px; border-radius:0 6px 6px 0; }
+  .ar .meta-box { border-left:none; border-right:4px solid #b8924a; border-radius:6px 0 0 6px; }
+  ul { margin: 4px 0 10px; padding-left: 22px; }
+  .ar ul { padding-left: 0; padding-right: 22px; }
+  li { margin-bottom: 4px; }
+  .toc li { margin-bottom: 6px; font-size: 11pt; }
+  .divider { height:2px; background:linear-gradient(90deg,#b8924a,transparent); margin: 4px 0 14px; border:0; }
+  .note { background:#eef5f9; border:1px solid #cfe2ee; padding:8px 12px; border-radius:6px; font-size:9.5pt; color:#264a5e; margin: 6px 0 14px; }
+  .ar .note { border-right:4px solid #155374; }
+  strong { color:#0f3d57; }
+  .ar strong { color:#7a5e2e; }
+  .total-row td { background:#0f3d57 !important; color:#fff; font-weight:700; }
+  .ss-section { page-break-inside: avoid; }
+  .ss-full { width:100%; border-radius:8px; box-shadow:0 2px 12px rgba(0,0,0,.18); display:block; margin:0 auto 10px; }
+  .ss-row { display:flex; gap:12px; margin-bottom:14px; align-items:flex-start; }
+  .ss-row .ss-item { flex:1; text-align:center; }
+  .ss-row img { width:100%; border-radius:8px; box-shadow:0 2px 12px rgba(0,0,0,.18); }
+  .ss-caption { font-size:8.5pt; color:#5a4427; text-align:center; margin-top:4px; font-style:italic; }
+  .ss-caption.ar { direction:rtl; }
+  .ss-bar { width:100%; border-radius:6px; box-shadow:0 2px 8px rgba(0,0,0,.2); display:block; margin:0 auto 6px; }
+  .ss-frame { border:2px solid #e8e0d0; border-radius:10px; padding:10px; background:#faf8f3; margin-bottom:14px; }
+</style>
+</head>
+<body>
+
+<!-- COVER -->
+<div class="cover">
+  <div class="tag">Mada Innovation Award &middot; Scaling Innovation Grant</div>
+  <h1>Mnfz</h1>
+  <div class="sub">An Arabic-first audiobook for blind &amp; low-vision learners</div>
+  <div class="ar-title">منفِذ — كتاب صوتي عربي أوّلاً</div>
+  <div class="meta">
+    Full Application Dossier &nbsp;|&nbsp; ملف التقديم الكامل<br>
+    Category: Scaling Innovation Grant (71,000 – 100,000 QAR)<br>
+    Requested Budget: 90,000 QAR &middot; 4-Month Project Cycle
+  </div>
+</div>
+
+<!-- TOC -->
+<div class="section">
+  <h2>Contents &middot; المحتويات</h2>
+  <ol class="toc">
+    <li>Award Category &amp; Target Use Case — الفئة وحالة الاستخدام</li>
+    <li>About the Innovation — نبذة عن الابتكار</li>
+    <li>How it is Unique &amp; Innovative — التفرّد والابتكار</li>
+    <li>Target Disability — الإعاقة المستهدفة</li>
+    <li>Key Activities (Program) — الأنشطة الرئيسية</li>
+    <li>Business Model Canvas — نموذج العمل التجاري
+      <ul>
+        <li>Key Activities · Key Resources · Value Propositions</li>
+        <li>Customer Relationships · Channels · Customer Segments</li>
+        <li>Key Partners · Revenue Streams</li>
+      </ul>
+    </li>
+    <li>Total Cost &amp; Milestones — التكلفة والمعالم</li>
+    <li>Development &amp; Implementation Strategy — استراتيجية التطوير والتنفيذ</li>
+    <li>Sustainability Model (3 years) — نموذج الاستدامة</li>
+  </ol>
+</div>
+
+<!-- 1. CATEGORY -->
+<div class="pagebreak section">
+  <h2>1. Award Category &amp; Target Use Case</h2>
+  <div class="meta-box">
+    <strong>Selected category:</strong> Scaling Innovation Grant — 2 winners, 71,000–100,000 QAR.<br>
+    <strong>Target use case:</strong> Digitally Accessible Educational Content (Education).<br>
+    <strong>Target disability:</strong> Blindness &amp; Low Vision (primary); Dyslexia &amp; ADHD (secondary).
+  </div>
+  <p><strong>Why Scaling Innovation Grant:</strong> Mnfz is past the concept and simple-prototype stages — it is a working product with 10 Arabic neural voices across 5 dialects, on-device playback, library persistence, study notes, and a desktop wrapper. The Scaling tier explicitly funds "developing a robust prototype, conducting targeted pilot programs" with a moderate budget, which matches the project's maturity and the planned 4-month pilot precisely.</p>
+</div>
+
+<!-- 2. ABOUT -->
+<div class="pagebreak section">
+  <h2>2. About the Innovation — نبذة عن الابتكار</h2>
+  <span class="lang-label">English</span>
+  <p>Mnfz is an Arabic-first audiobook that reads Arabic educational digital content. Blind and low-vision learners in Arabic-language classrooms study from a lot of PDFs — school books, lecture handouts, university papers, exam revision sheets, and Islamic study materials — yet no natural neural Arabic speech version of these documents is available to them. منفذ fills in the blanks. It turns any Arabic PDF into natural neural speech across 10 Arabic neural voices spanning five dialects (Saudi Arabia, Egypt, Jordan, UAE, Qatar), with word-level highlighting, page-by-page playback, built-in study notes on the same page, and on-device voice models that let students keep reading without any network — even while travelling.</p>
+  <p>Mnfz runs fully on the learner's own device. The PDF stays on the device, the voices run on the device, notes and reading progress live on the device, and nothing is uploaded to outside servers. Exam materials, personal notes, and study habits never leave the learner's hands. منفذ becomes an inclusive, directly usable format for these materials — not a static PDF, not a cloud AI assistant, but an on-hand audiobook ready to use.</p>
+</div>
+<div class="section ar">
+  <span class="lang-label ar-l">العربية</span>
+  <p>"منفذ" كتاب صوتي عربي يقرأ المحتوى التعليمي العربي الرقمي. الطلبة المكفوفون وضعاف البصر في الصفوف العربية يدرسون من ملفات كثيرة — الكتب المدرسية، وأوراق المحاضرات، والأبحاث الجامعية، ومراجع الامتحانات، والمواد الإسلامية — ولا تتوفّر لهم صيغة صوتية عصبية طبيعية بالعربية لهذه الملفات. يسدّ "منفذ" هذه الفجوة. يحوّل أي وثيقة عربية إلى نطق عصبي طبيعي عبر عشرة أصوات عربية تغطّي خمس لهجات (السعودية، مصر، الأردن، الإمارات، قطر)، مع تتبّع الكلمة المنطوقة بصريًا، وقراءة صفحة-صفحة، وملاحظات دراسية على الصفحة نفسها، ونماذج صوتية محلية تتيح للطالب القراءة بلا اتصال بالإنترنت — حتى أثناء السفر.</p>
+  <p>يعمل "منفذ" بالكامل على جهاز المتعلم. الوثيقة تبقى على الجهاز، والأصوات تعمل على الجهاز، والملاحظات ومواضع القراءة محفوظة على الجهاز، ولا يُرفع شيء إلى خوادم خارجية. مواد الامتحانات، والملاحظات الشخصية، وعادات الدراسة لا تغادر الطالب أبدًا. يصبح "منفذ" تنسيقًا دامجًا جاهزًا للاستخدام مباشرة — ليس ملفًا جامدًا، ولا مساعدًا ذكيًا في السحابة، بل كتاب صوتي في متناول اليد جاهز للاستخدام.</p>
+</div>
+
+<!-- 3. UNIQUE -->
+<div class="pagebreak section">
+  <h2>3. How it is Unique &amp; Innovative — التفرّد والابتكار</h2>
+  <span class="lang-label">English</span>
+  <p>What makes Mnfz unique is the combination of three things that no other Arabic reading tool puts together. First, it is Arabic-first by design, not an English product with Arabic bolted on. Second, it works at the document level, not the screen-reader level — the student opens the PDF inside Mnfz and starts listening, with no need for NVDA, VoiceOver, or any external assistive software. Third, it runs on the learner's own device, so the PDF and the study notes never leave the student.</p>
+  <p>On top of that, Mnfz gives the learner ten Arabic neural voices across five regional dialects — Saudi, Egyptian, Jordanian, Emirati, Qatari — so the learner can pick a voice that matches their own way of speaking. This matters for comprehension and for the learner's connection to the material. Most Arabic TTS products offer one or two voices in formal Arabic only.</p>
+  <p>Add word-level highlight that follows the spoken word, page-by-page playback, in-page study notes, and full offline reading via on-device voice models, and Mnfz becomes a complete audiobook reading experience for Arabic educational documents — not a feature buried inside a larger accessibility tool.</p>
+</div>
+<div class="section ar">
+  <span class="lang-label ar-l">العربية</span>
+  <p>ما يميّز "منفذ" هو الجمع بين ثلاثة أشياء لم تجمعها أي أداة قراءة عربية أخرى. أولًا، هو عربي بالتصميم، وليس منتجًا إنجليزيًا أُضيفت إليه العربية لاحقًا. ثانيًا، يعمل على مستوى الوثيقة، لا على مستوى قارئ الشاشة — يفتح الطالب الوثيقة داخل "منفذ" مباشرة ويبدأ الاستماع، دون الحاجة إلى NVDA أو VoiceOver أو أي برنامج مساعد خارجي. ثالثًا، يعمل على جهاز المتعلم نفسه، فالوثيقة والملاحظات لا تغادر الطالب أبدًا.</p>
+  <p>إضافةً إلى ذلك، يوفّر "منفذ" عشرة أصوات عربية عصبية تغطّي خمس لهجات إقليمية — السعودية، المصرية، الأردنية، الإماراتية، والقطرية — فيختار المتعلم صوتًا قريبًا من لهجته. هذا يُحدث فارقًا في الفهم وفي ارتباط الطالب بالمادة. معظم منتجات النطق العربية تقدّم صوتًا أو صوتين بالفصحى فقط.</p>
+  <p>وإذا أضفنا تتبّع الكلمة المنطوقة بصريًا، والقراءة صفحة-صفحة، والملاحظات الدراسية على الصفحة نفسها، والقراءة الكاملة دون اتصال بالإنترنت عبر نماذج صوتية محلية، يصبح "منفذ" تجربة كتاب صوتي متكاملة للمحتوى التعليمي العربي — لا ميزةً مدفونة داخل أداة وصول أكبر.</p>
+</div>
+
+<!-- SCREENSHOTS -->
+<div class="pagebreak ss-section">
+  <h2>App Screenshots — لقطات شاشة التطبيق</h2>
+
+  <!-- Hero / Welcome screen -->
+  <h3>Welcome Screen — شاشة الترحيب</h3>
+  <div class="ss-frame">
+    <img class="ss-full" src="deck_assets/hero_light.png" alt="Mnfz welcome screen">
+    <div class="ss-caption ar">شاشة البداية — ارجع من حيث توقّفت، أو ابدأ استماعًا جديدًا</div>
+  </div>
+
+  <!-- Home light + dark -->
+  <h3>Home View — Light &amp; Dark Mode &nbsp;|&nbsp; العرض الرئيسي — فاتح وداكن</h3>
+  <div class="ss-row">
+    <div class="ss-item">
+      <img src="deck_assets/home_light.png" alt="Home screen light mode">
+      <div class="ss-caption">Light mode — الوضع الفاتح</div>
+    </div>
+    <div class="ss-item">
+      <img src="deck_assets/home_dark.png" alt="Home screen dark mode">
+      <div class="ss-caption">Dark mode — الوضع الداكن</div>
+    </div>
+  </div>
+
+  <!-- Player bars -->
+  <h3>Audio Player Bar — شريط المشغّل الصوتي</h3>
+  <div class="ss-frame">
+    <img class="ss-bar" src="deck_assets/player_light.png" alt="Player bar light">
+    <div class="ss-caption" style="margin-bottom:10px;">Light — اختيار الصوت · التقدم · السرعة · التشغيل</div>
+    <img class="ss-bar" src="deck_assets/player_dark.png" alt="Player bar dark">
+    <div class="ss-caption">Dark — نفس عناصر التحكم في الوضع الداكن</div>
+  </div>
+</div>
+
+<div class="pagebreak ss-section">
+  <!-- Mobile -->
+  <h3>Mobile View — العرض على الموبايل</h3>
+  <div class="ss-row" style="justify-content:center;">
+    <div class="ss-item" style="max-width:240px;">
+      <img src="deck_assets/mobile_light.png" alt="Mobile light">
+      <div class="ss-caption">Mobile light — فاتح</div>
+    </div>
+    <div class="ss-item" style="max-width:240px;">
+      <img src="deck_assets/mobile_dark.png" alt="Mobile dark">
+      <div class="ss-caption">Mobile dark — داكن</div>
+    </div>
+  </div>
+
+  <div class="note ar" style="margin-top:8px;">
+    <strong>تصميم متجاوب بالكامل</strong> — منفذ يعمل على أي جهاز: ويب، سطح مكتب (macOS / Windows / Linux)، وموبايل. لا تثبيت، لا تسجيل، لا اتصال بالإنترنت مطلوب بعد التحميل الأول.
+  </div>
+</div>
+
+<!-- 4. TARGET DISABILITY -->
+<div class="pagebreak section">
+  <h2>4. Target Disability — الإعاقة المستهدفة</h2>
+  <table>
+    <tr><th>Tier</th><th>Disability</th><th>Justification</th></tr>
+    <tr><td><strong>Primary</strong></td><td>Sensory — Blindness &amp; Low Vision</td><td>The anchor population: Arabic-first neural audio + word-level highlighting for reading digital study material independently.</td></tr>
+    <tr><td><strong>Secondary</strong></td><td>Learning — Dyslexia</td><td>TTS with synchronized highlighting is the canonical dyslexia accommodation.</td></tr>
+    <tr><td><strong>Secondary</strong></td><td>ADHD / Attention</td><td>Focus mode and reading guide (shipped features) directly support attention regulation while reading.</td></tr>
+  </table>
+  <p class="note">Scope kept deliberately tight: Mada reviewers reward a focused target population over a sprawling one. Every checked disability is backed by a real, shipped feature.</p>
+</div>
+
+<!-- 5. KEY ACTIVITIES (program) -->
+<div class="pagebreak section">
+  <h2>5. Key Activities (Program) — الأنشطة الرئيسية</h2>
+  <span class="lang-label">English</span>
+  <h4>Activity 1 — Scale the Arabic neural voice library across all five dialect groups</h4>
+  <p>Expand to full coverage of Gulf, Egyptian, Levantine, Maghrebi, and Modern Standard Arabic, tuned for educational content: equations read as spoken phrases, diacritics respected, paragraph-level pacing for long study sessions. Every voice runs on-device.</p>
+  <h4>Activity 2 — Pilot with blind and low-vision learners in Qatari schools and universities</h4>
+  <p>A 6-month cohort study with Mada and Qatar's inclusive education programs, measuring reading time, comprehension, and the one metric that matters: can the learner finish a document independently?</p>
+  <h4>Activity 3 — Build the on-device Arabic study agent</h4>
+  <p>A local open-weights language model (llama.cpp / MLX) that answers questions about the document, summarizes chapters, and quizzes the learner — without a single byte leaving the device.</p>
+  <h4>Activity 4 — Co-design every release with the learners who will use it</h4>
+  <p>Structured feedback cycles with blind, low-vision, dyslexic, and ADHD students. Each release validated against WCAG 2.2 AA and the question "can I study independently?"</p>
+  <h4>Activity 5 — Open the Arabic accessibility toolkit for the wider ecosystem</h4>
+  <p>Release the extraction-to-audio pipeline, voice configuration, and access-preference patterns as open documentation, so the next Arabic education tool does not start from zero.</p>
+  <table>
+    <tr><th>Activity</th><th>Maps to Mada criteria</th></tr>
+    <tr><td>1 — Voice scale</td><td>Inclusive content format · Arabic-first</td></tr>
+    <tr><td>2 — School pilot</td><td>Equal learning · measurable impact</td></tr>
+    <tr><td>3 — On-device AI agent</td><td>Independence · data sovereignty · innovation</td></tr>
+    <tr><td>4 — Co-design</td><td>User-led design · WCAG alignment</td></tr>
+    <tr><td>5 — Open toolkit</td><td>Ecosystem multiplier · sustainability</td></tr>
+  </table>
+</div>
+
+<!-- 6. BMC -->
+<div class="pagebreak section">
+  <h2>6. Business Model Canvas — نموذج العمل التجاري</h2>
+
+  <h3>6.1 Key Activities — الأنشطة الأساسية</h3>
+  <div class="ar">
+    <span class="lang-label ar-l">العربية</span>
+    <ul>
+      <li><strong>تطوير المنتج وهندسة المنصة على الجهاز:</strong> تحسين مستمر للتطبيق — استخراج النص، التشغيل الصوتي، ميزات الإتاحة، التوصيل عبر المنصات.</li>
+      <li><strong>تنسيق مكتبة الأصوات العصبية العربية:</strong> تجميع وتقييم وضبط وحزم الأصوات عبر اللهجات للمحتوى التعليمي.</li>
+      <li><strong>التصميم التشاركي والتحقق من معايير الوصول:</strong> دورات تغذية راجعة مع الطلاب ذوي الإعاقة في كل إصدار.</li>
+      <li><strong>الشراكات المؤسسية والنشر:</strong> ضم المدارس والجامعات والمكتبات ومنظمات خدمات الإعاقة.</li>
+      <li><strong>التوثيق المفتوح ودعم المنظومة:</strong> نشر الأنماط والأدلة المرجعية للناشرين وأنظمة إدارة التعلم.</li>
+    </ul>
+  </div>
+
+  <h3>6.2 Key Resources — الموارد الأساسية</h3>
+  <div class="ar">
+    <span class="lang-label ar-l">العربية</span>
+    <ul>
+      <li><strong>مكتبة الأصوات العصبية العربية (ملكية فكرية):</strong> أكثر من عشرة أصوات على الجهاز عبر خمس لهجات.</li>
+      <li><strong>حزمة برمجية وقاعدة كود عربية أولاً:</strong> منصة منفذ بمعمارية جاهزة للإنتاج وملكية مُمتلكة بالكامل.</li>
+      <li><strong>فريق متعدد التخصصات:</strong> هندسة + إتاحة + لسانيات عربية.</li>
+      <li><strong>الشراكات الاستراتيجية:</strong> مدى، وزارات التعليم، الجامعات.</li>
+      <li><strong>بنية تحتية للذكاء الاصطناعي على الجهاز:</strong> نماذج مفتوحة الأوزان وخط استدلال محلي.</li>
+    </ul>
+  </div>
+
+  <h3>6.3 Value Propositions — القيم المقترحة</h3>
+  <div class="ar">
+    <span class="lang-label ar-l">العربية</span>
+    <ul>
+      <li><strong>استقلالية القراءة العربية بدون مساعد مبصر.</strong></li>
+      <li><strong>عربية أولاً بالتصميم، لا كإضافة لاحقة</strong> — عشرة أصوات عبر خمس لهجات.</li>
+      <li><strong>إتاحة على مستوى الوثيقة، لا على مستوى قارئ الشاشة.</strong></li>
+      <li><strong>خصوصية على الجهاز — سيادة بيانات لكل متعلم.</strong></li>
+      <li><strong>رفيق دراسة، لا مجرد قارئ</strong> — دليل قراءة، تركيز، ملاحظات، ووكيل دراسة محلي.</li>
+    </ul>
+  </div>
+</div>
+
+<div class="pagebreak section">
+  <h3>6.4 Customer Relationships — العلاقات مع العملاء</h3>
+  <div class="ar">
+    <span class="lang-label ar-l">العربية</span>
+    <ul>
+      <li><strong>خدمة ذاتية مع تجربة أولى دامجة</strong> — لا حساب، لا تسجيل؛ أول 60 ثانية لا تتطلب مساعدًا مبصرًا.</li>
+      <li><strong>شراكة تصميم مع المتعلمين</strong> — جلسات تغذية راجعة شهرية تُشكّل خارطة الطريق.</li>
+      <li><strong>دعم مؤسسي للمدارس والجامعات</strong> — تدريب وتكامل ودعم تقني بشخص محدد لا طابور تذاكر.</li>
+      <li><strong>مجتمع ممارسة للإتاحة العربية</strong> — منتدى مفتوح للمتعلمين والمعلمين والمطورين.</li>
+      <li><strong>توثيق مفتوح ودعم تقني للناشرين</strong> وأنظمة إدارة التعلم والبوابات الحكومية.</li>
+    </ul>
+  </div>
+
+  <h3>6.5 Channels — قنوات التوصيل</h3>
+  <div class="ar">
+    <span class="lang-label ar-l">العربية</span>
+    <ul>
+      <li><strong>تطبيق ويب مباشر</strong> — وصول فوري بلا تثبيت ولا تسجيل.</li>
+      <li><strong>تطبيقات سطح المكتب والموبايل</strong> — للاستخدام على الجهاز وبلا إنترنت.</li>
+      <li><strong>شبكة شركاء مدى</strong> ومنظمات خدمات الإعاقة.</li>
+      <li><strong>شراكات مباشرة مع المؤسسات التعليمية</strong> — داخل الفصل والمنهج.</li>
+      <li><strong>التوثيق المفتوح والبوابة التقنية</strong> للمطورين والناشرين.</li>
+    </ul>
+  </div>
+
+  <h3>6.6 Customer Segments — شرائح العملاء</h3>
+  <div class="ar">
+    <span class="lang-label ar-l">العربية</span>
+    <ul>
+      <li><strong>الطلاب المكفوفون وضعاف البصر الناطقون بالعربية</strong> (الشريحة المرجعية).</li>
+      <li><strong>المتعلمون ذوو عسر القراءة واضطراب فرط الحركة.</strong></li>
+      <li><strong>المتعلمون المبصرون الذين ينتفعون بالقراءة الصوتية</strong> (عائد التصميم الشامل).</li>
+      <li><strong>المؤسسات التعليمية</strong> — المدارس والجامعات وبرامج التعليم الدامج.</li>
+      <li><strong>ناشرو المحتوى العربي ومزودو أنظمة إدارة التعلم والبوابات الحكومية.</strong></li>
+    </ul>
+  </div>
+</div>
+
+<div class="pagebreak section">
+  <h3>6.7 Key Partners — الشركاء الأساسيون</h3>
+  <div class="ar">
+    <span class="lang-label ar-l">العربية</span>
+    <ul>
+      <li><strong>مدى — المركز القطري للتكنولوجيا المساعدة:</strong> تمويل ومصداقية وتوزيع (حجر الزاوية).</li>
+      <li><strong>المؤسسات التعليمية ووزارات التعليم:</strong> نشر وتجارب وإيرادات طويلة الأمد.</li>
+      <li><strong>منظمات خدمات الإعاقة وجمعيات المكفوفين:</strong> وصول للمستخدمين ومناصرة وتصميم تشاركي.</li>
+      <li><strong>مزودو تقنيات الصوت</strong> (تجاري + مفتوح المصدر): بنية صوتية وحماية من الاحتجاز التقني.</li>
+      <li><strong>الشركاء الأكاديميون:</strong> تحقق علمي وقياس للأثر وأدلة محكَّمة.</li>
+    </ul>
+  </div>
+
+  <h3>6.8 Revenue Streams — مصادر الإيرادات</h3>
+  <div class="note ar">مبدأ تأسيسي: الطلاب ذوو الإعاقة لا يدفعون أبدًا. الإيرادات تأتي من المؤسسات والمنظومة.</div>
+  <div class="ar">
+    <span class="lang-label ar-l">العربية</span>
+    <ul>
+      <li><strong>الترخيص المؤسسي</strong> — المدارس والجامعات (القاعدة الثابتة).</li>
+      <li><strong>ترخيص المنظومة</strong> — الناشرون ومزودو أنظمة إدارة التعلم والبوابات الحكومية.</li>
+      <li><strong>واجهة الأصوات العصبية العربية البرمجية</strong> — دفع حسب الاستخدام للمطورين.</li>
+      <li><strong>المنح وتمويل الأثر</strong> — جائزة مدى ومنح الإتاحة اللاحقة.</li>
+      <li><strong>الخدمات المهنية</strong> — تطوير أصوات مخصص، تكامل، تدريب.</li>
+    </ul>
+  </div>
+</div>
+
+<!-- 7. MILESTONES -->
+<div class="pagebreak section ar">
+  <h2 style="direction:rtl;text-align:right;">٧. التكلفة الإجمالية والمعالم</h2>
+  <p>دورة مشروع التطوير 4 أشهر بحد أقصى، مقسّمة إلى ثلاثة معالم. جميع المهام بحثية وابتكارية فقط.</p>
+
+  <h3 style="direction:rtl;text-align:right;">المعلم الأول — البحث والتصميم (شهر واحد · 25,000 ريال)</h3>
+  <p><strong>المهام:</strong></p>
+  <ul>
+    <li>بحث ومقارنة الأصوات العصبية العربية عبر خمس لهجات لتقييم ملاءمتها التعليمية.</li>
+    <li>تصميم معمارية وكيل الدراسة العربي على الجهاز واختيار النموذج مفتوح الأوزان.</li>
+    <li>جلسات بحث تشاركي مع الطلاب المكفوفين وضعاف البصر لرسم خريطة نقاط الألم.</li>
+  </ul>
+  <p><strong>المُسلَّمات:</strong></p>
+  <ul>
+    <li>تقرير بحث تقني يقارن الأصوات بنتائج جودة قابلة للقياس.</li>
+    <li>وثيقة مواصفات معمارية لوكيل الدراسة مع خطة التكامل وأهداف الأداء.</li>
+    <li>تقرير بحث المستخدم مع مخططات واجهات الميزات الجديدة.</li>
+  </ul>
+
+  <h3 style="direction:rtl;text-align:right;">المعلم الثاني — التطوير الأساسي (شهران · 45,000 ريال)</h3>
+  <p><strong>المهام:</strong></p>
+  <ul>
+    <li>تطوير ودمج مكتبة الأصوات الموسّعة مع الضبط التعليمي ونطق المعادلات وتبديل اللهجة.</li>
+    <li>بناء النموذج الأولي لوكيل الدراسة العربي على الجهاز.</li>
+    <li>تطبيق تحسينات الإتاحة وفق معايير الوصول الدولية.</li>
+  </ul>
+  <p><strong>المُسلَّمات:</strong></p>
+  <ul>
+    <li>ملف مضغوط بإصدار منفذ الثاني مع مكتبة الأصوات الموسّعة + رابط المصدر.</li>
+    <li>ملف مضغوط بالنموذج الأولي لوكيل الدراسة مدمجًا + فيديو عرض.</li>
+    <li>تقرير تدقيق معايير الوصول موقَّع من مدقّق مستقل.</li>
+  </ul>
+
+  <h3 style="direction:rtl;text-align:right;">المعلم الثالث — التحقق والإطلاق (شهر واحد · 20,000 ريال)</h3>
+  <p><strong>المهام:</strong></p>
+  <ul>
+    <li>اختبار ميداني مع الطلاب المكفوفين وضعاف البصر — قياس زمن القراءة والفهم والاستقلالية.</li>
+    <li>تحسين الأداء والإصلاحات النهائية بناءً على الملاحظات.</li>
+    <li>إعداد حزمة التوثيق المفتوحة للناشرين ومزودي أنظمة إدارة التعلم.</li>
+  </ul>
+  <p><strong>المُسلَّمات:</strong></p>
+  <ul>
+    <li>تقرير الدراسة الميدانية مع قياسات كمية للقراءة والفهم والاستقلالية.</li>
+    <li>ملف مضغوط بالإصدار الإنتاجي النهائي مع مثبّتات موقَّعة لأنظمة ماك وويندوز ولينكس.</li>
+    <li>رابط بوابة التوثيق المفتوحة مع أدلة التكامل وإعدادات الأصوات.</li>
+  </ul>
+
+  <table>
+    <tr><th>المعلم</th><th>المدة</th><th>التكلفة (ريال قطري)</th></tr>
+    <tr><td>الأول — البحث والتصميم</td><td>شهر واحد</td><td>25,000</td></tr>
+    <tr><td>الثاني — التطوير الأساسي</td><td>شهران</td><td>45,000</td></tr>
+    <tr><td>الثالث — التحقق والإطلاق</td><td>شهر واحد</td><td>20,000</td></tr>
+    <tr class="total-row"><td>الإجمالي</td><td>أربعة أشهر</td><td>90,000</td></tr>
+  </table>
+</div>
+
+<!-- 8. STRATEGY -->
+<div class="pagebreak section ar">
+  <h2 style="direction:rtl;text-align:right;">٨. استراتيجية التطوير والتنفيذ</h2>
+  <p>منفذ لا يُبنى كأداة تُلقى على المستخدم الكفيف بعد اكتمالها، بل يُبنى معه من أول سطر كود. ثلاث ركائز تحكم كل قرار: عربية أولاً بالتصميم لا كإضافة لاحقة، على الجهاز أولاً لا على السحابة، ومع المستخدم لا له.</p>
+  <p>منهجية التطوير دورة تكرارية من أربع مراحل: نبدأ بجلسات بحث تشاركي مع المتعلمين المكفوفين وضعاف البصر وذوي عسر القراءة وذوي اضطراب فرط الحركة. نُصمّم الحلول معهم، لا لهم. ننفّذ تقنيًا مع اختبارات آلية شاملة ومراجعة معايير الوصول الدولية على كل تغيير. ثم نُجري تحققًا ميدانيًا يقيس زمن القراءة والفهم والاستقلالية قبل أي إصدار عام.</p>
+  <p>التنفيذ ثلاث مراحل واضحة. المرحلة الأولى مُنجَزة — منفذ يعمل اليوم بعشرة أصوات عربية عبر خمس لهجات، استخراج نص ذكي، تمييز متزامن على مستوى الكلمة، مكتبة محلية على الجهاز، ووضع تركيز للمتعلمين ذوي اضطراب فرط الحركة. المرحلة الثانية تموّلها منحة مدى خلال أربعة أشهر: توسيع الأصوات، بناء وكيل دراسة عربي محلي، تجربة ميدانية مع طلاب قطريين، واعتماد رسمي لمعايير الوصول. المرحلة الثالثة بعد المنحة: نشر مؤسسي عبر الخليج، ترخيص المنظومة للناشرين، مجتمع ممارسة عربي للإتاحة، وإصدارات الموبايل.</p>
+  <p>المخاطر مُحسَّبة سلفًا: نموذج صوت هجين يمنع الاحتجاز التقني، نماذج لغوية صغيرة تعمل على الأجهزة المحدودة، شراكة مدى تفتح وصولًا فوريًا للمتطوعين، ومعالم مستقلة تُسلّم قيمة بمفردها لو تأخّر أحدها.</p>
+  <p>كل إصدار يمرّ بثلاث طبقات تحقق: اختبارات تقنية آلية، تدقيق إتاحة مستقل، وموافقة مسبقة من مستخدمين حقيقيين. منفذ ليس مشروعًا بحثيًا منتظرًا، بل منتج حيّ يتطور مع كل تجربة — منحة مدى تموّل خطوة منطقية تالية واضحة، لا قفزة في المجهول. هذا ما يجعله منخفض المخاطرة، عالي الأثر، وقابلاً للقياس من اليوم الأول.</p>
+</div>
+
+<!-- 9. SUSTAINABILITY -->
+<div class="pagebreak section ar">
+  <h2 style="direction:rtl;text-align:right;">٩. نموذج الاستدامة لثلاث سنوات</h2>
+  <p>استدامة منفذ مبنية على ثلاث حقائق هيكلية تجعل بقاءه رخيصًا وقابلًا للاستمرار دون منح متكررة: التكلفة التشغيلية شبه صفرية لأن كل شيء يعمل على جهاز المتعلم بلا فواتير سحابية تنمو مع كل مستخدم، القاعدة مفتوحة المصدر فمجتمع المطورين يساهم في الصيانة دون فريق كبير مكلف، والمتعلم ذو الإعاقة لا يدفع أبدًا — أساس أخلاقي قبل أن يكون نموذجًا تجاريًا — فالإيرادات تأتي من المؤسسات والمنظومة لا من الفئة المستهدفة.</p>
+  <p><strong>السنة الأولى:</strong> نُتمّ مشروع المنحة ونُطلق الإصدار الثاني، نوقّع أول عقود الترخيص المؤسسي مع مدارس وجامعات تجريبية في قطر، ونبني محفظة أدلة الأثر من التجربة الميدانية. الهدف المالي: تغطية تكاليف التشغيل الأساسية.</p>
+  <p><strong>السنة الثانية:</strong> نوسّع الترخيص المؤسسي عبر الخليج مستندين إلى أدلة السنة الأولى، نُطلق واجهة الأصوات العربية البرمجية المدفوعة للمطورين، ونبدأ ترخيص المنظومة للناشرين ومزودي أنظمة إدارة التعلم. الهدف المالي: تجاوز نقطة التعادل وبدء تحقيق هامش ربح.</p>
+  <p><strong>السنة الثالثة:</strong> نصل إلى محفظة عملاء مؤسسيين مستقرة بإيرادات سنوية متجددة، ونعقد شراكات إقليمية مع وزارات التعليم. نُعيد استثمار الفائض في أصوات ولهجات جديدة وفي وكيل الدراسة. الهدف المالي: فائض تشغيلي يموّل التطوير بالكامل دون أي منحة إضافية.</p>
+  <p>الاستدامة لا تعتمد على مصدر واحد بل على أربعة مصادر مستقلة تتكامل: الترخيص المؤسسي قاعدةً ثابتة، ترخيص المنظومة للناشرين والبوابات الحكومية، واجهة الأصوات البرمجية بدخل ينمو مع التبنّي، والخدمات المهنية من أصوات مخصصة وتكامل. إذا تعثّر مصدر حملته البقية.</p>
+  <p>هكذا يتحول منفذ من مشروع يعيش على المنح إلى منتج يعيش على قيمته الحقيقية — منخفض التكاليف، متعدد الدخل، ومستقل ماليًا قبل نهاية السنة الثالثة. ولأن التكاليف لا تنمو مع عدد المستخدمين، كل عميل جديد يضيف هامشًا لا عبئًا.</p>
+</div>
+
+</body>
+</html>

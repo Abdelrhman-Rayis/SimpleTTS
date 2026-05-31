@@ -1,5 +1,5 @@
 """
-SimpleTTS desktop wrapper.
+Munfath desktop wrapper.
 
 Runs the FastAPI app in a background thread and opens a native window
 (WKWebView on macOS, WebView2 on Windows, GTK WebKit on Linux) pointing
@@ -25,7 +25,7 @@ sys.path.insert(0, HERE)
 
 from app import app  # noqa: E402
 
-WINDOW_TITLE = "SimpleTTS"
+WINDOW_TITLE = "منفذ — mnfz.tech"
 WINDOW_W, WINDOW_H = 1280, 820
 MIN_W,    MIN_H    = 820,  560
 

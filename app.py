@@ -1,23 +1,54 @@
-from fastapi import FastAPI, UploadFile, File, BackgroundTasks
-from fastapi.responses import HTMLResponse, FileResponse, JSONResponse
+from fastapi import FastAPI, UploadFile, File, BackgroundTasks, HTTPException
+from fastapi.responses import HTMLResponse, FileResponse, JSONResponse, Response
 from pydantic import BaseModel
 from pydub import AudioSegment, effects
 import fitz
 import subprocess
+import shutil
 import hashlib
 import os
+import re
+import threading
 import uuid
-from collections import Counter
+import unicodedata
+from collections import Counter, OrderedDict
 
+_env_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env")
+if os.path.isfile(_env_path):
+    with open(_env_path, "r", encoding="utf-8") as _envf:
+        for _line in _envf:
+            _line = _line.strip()
+            if not _line or _line.startswith("#") or "=" not in _line:
+                continue
+            _k, _v = _line.split("=", 1)
+            _k = _k.strip()
+            _v = _v.strip().strip('"').strip("'")
+            if _k and _k not in os.environ:
+                os.environ[_k] = _v
+
+import azure_voice
 import kokoro_voice
 
 app = FastAPI()
 
 MODEL_PATH = os.path.abspath("models/en_US-lessac-medium.onnx")
-PIPER_EXEC = os.path.expanduser("~/OpenWebTTS/venv/bin/piper")
+# Resolve piper: explicit PIPER_EXEC env var → `piper` on PATH (pip install
+# piper-tts) → the local dev path. Lets the same code run on a server unchanged.
+PIPER_EXEC = (os.environ.get("PIPER_EXEC")
+              or shutil.which("piper")
+              or os.path.expanduser("~/OpenWebTTS/venv/bin/piper"))
 MODELS_DIR = os.path.abspath("models")
 CACHE_DIR  = os.path.abspath("audio_cache")
 os.makedirs(CACHE_DIR, exist_ok=True)
+
+_BIDI_CONTROL_RE = re.compile(r"[\u200e\u200f\u202a-\u202e\u2066-\u2069]")
+_NO_SPACE_BEFORE = set("،؛؟!,.:)]}»…٪%")
+_NO_SPACE_AFTER = set("([{«")
+_PDF_RENDER_CACHE: OrderedDict[str, bytes] = OrderedDict()
+_PDF_RENDER_CACHE_LOCK = threading.Lock()
+_MAX_RENDER_CACHE_DOCS = 8
+_MIN_RENDER_SCALE = 0.5
+_MAX_RENDER_SCALE = 3.0
 
 
 class SynthRequest(BaseModel):
@@ -47,6 +78,37 @@ def cleanup_file(path: str) -> None:
     except Exception:
         pass
 
+def remember_pdf_for_render(doc_id: str, pdf_bytes: bytes) -> None:
+    with _PDF_RENDER_CACHE_LOCK:
+        _PDF_RENDER_CACHE[doc_id] = pdf_bytes
+        _PDF_RENDER_CACHE.move_to_end(doc_id)
+        while len(_PDF_RENDER_CACHE) > _MAX_RENDER_CACHE_DOCS:
+            _PDF_RENDER_CACHE.popitem(last=False)
+
+def cached_pdf_for_render(doc_id: str) -> bytes | None:
+    with _PDF_RENDER_CACHE_LOCK:
+        pdf_bytes = _PDF_RENDER_CACHE.get(doc_id)
+        if pdf_bytes is not None:
+            _PDF_RENDER_CACHE.move_to_end(doc_id)
+        return pdf_bytes
+
+def clean_extracted_text(text: str) -> str:
+    return _BIDI_CONTROL_RE.sub("", unicodedata.normalize("NFC", text or "")).strip()
+
+def join_extracted_tokens(tokens: list[str]) -> str:
+    cleaned = [clean_extracted_text(token) for token in tokens]
+    cleaned = [token for token in cleaned if token]
+    if not cleaned:
+        return ""
+
+    out = cleaned[0]
+    for token in cleaned[1:]:
+        if token[0] in _NO_SPACE_BEFORE or out[-1] in _NO_SPACE_AFTER:
+            out += token
+        else:
+            out += " " + token
+    return out
+
 def piper_synth(text: str, voice: str, output_path: str) -> None:
     model_path = MODEL_PATH
     if voice:
@@ -65,7 +127,10 @@ def piper_synth(text: str, voice: str, output_path: str) -> None:
 @app.get("/")
 def read_root():
     with open("index.html", "r", encoding="utf-8") as f:
-        return HTMLResponse(f.read())
+        return HTMLResponse(
+            f.read(),
+            headers={"Cache-Control": "no-store, max-age=0"},
+        )
 
 @app.get("/voices")
 def list_voices():
@@ -82,23 +147,58 @@ def list_voices():
                 })
     except Exception:
         pass
-    # Kokoro premium voices, if the kokoro package is installed
-    if kokoro_voice.is_available():
+    # Kokoro premium voices, if the kokoro package is installed.
+    kokoro_status = kokoro_voice.availability()
+    if kokoro_status["available"]:
         voices.extend(kokoro_voice.list_voices())
-    return {"voices": voices}
+    else:
+        voices.append({
+            "name": "",
+            "engine": "kokoro",
+            "label": kokoro_voice.unavailable_label(kokoro_status),
+            "disabled": True,
+            "placeholder": True,
+            "diagnostics": kokoro_status,
+        })
+    # Azure Arabic neural voices, if credentials are configured.
+    voices.extend(azure_voice.list_voices())
+    return {"voices": voices, "kokoro": kokoro_status}
 
 @app.post("/extract")
 async def extract_pdf(file: UploadFile = File(...)):
     pdf_bytes = await file.read()
+    doc_id = hashlib.sha256(pdf_bytes).hexdigest()
+    remember_pdf_for_render(doc_id, pdf_bytes)
     doc = fitz.open(stream=pdf_bytes, filetype="pdf")
     total_pages = len(doc)
 
     pages_raw = []
     for page in doc:
         words_raw = page.get_text("words")
+        normalized_words = []
+        for idx, w in enumerate(words_raw):
+            text = clean_extracted_text(w[4])
+            if not text:
+                continue
+            normalized_words.append({
+                "x0": w[0],
+                "y0": w[1],
+                "x1": w[2],
+                "y1": w[3],
+                "text": text,
+                "block": int(w[5]) if len(w) > 5 else 0,
+                "line": int(w[6]) if len(w) > 6 else 0,
+                "word": int(w[7]) if len(w) > 7 else idx,
+            })
+        normalized_words.sort(key=lambda w: (
+            w["block"],
+            w["line"],
+            w["word"],
+            round(w["y0"], 3),
+            round(w["x0"], 3),
+        ))
         pages_raw.append({
-            "words": [{"x0": w[0], "y0": w[1], "x1": w[2], "y1": w[3], "text": w[4]}
-                      for w in words_raw],
+            "words": normalized_words,
             "width":  page.rect.width,
             "height": page.rect.height,
         })
@@ -130,11 +230,39 @@ async def extract_pdf(file: UploadFile = File(...)):
             zone    = "H" if rel_y < 0.08 else "F"
             skip    = in_zone and (w["text"].strip().lower(), zone) in skip_keys
             words.append({**w, "skip": skip})
-        text = " ".join(w["text"] for w in words if not w["skip"])
+        text = join_extracted_tokens([w["text"] for w in words if not w["skip"]])
         pages.append({"text": text, "words": words,
                       "width": pd["width"], "height": pd["height"]})
 
-    return {"total_pages": total_pages, "pages": pages}
+    return {"doc_id": doc_id, "total_pages": total_pages, "pages": pages}
+
+@app.get("/page-image/{doc_id}/{page_num}")
+def page_image(doc_id: str, page_num: int, scale: float = 1.6):
+    if not re.fullmatch(r"[0-9a-f]{64}", doc_id or ""):
+        raise HTTPException(status_code=404, detail="Unknown PDF")
+
+    pdf_bytes = cached_pdf_for_render(doc_id)
+    if pdf_bytes is None:
+        raise HTTPException(status_code=404, detail="PDF render cache expired; reload the PDF")
+
+    try:
+        scale = float(scale or 1.6)
+    except (TypeError, ValueError):
+        raise HTTPException(status_code=400, detail="Invalid scale")
+    scale = max(_MIN_RENDER_SCALE, min(scale, _MAX_RENDER_SCALE))
+    doc = fitz.open(stream=pdf_bytes, filetype="pdf")
+    try:
+        if page_num < 1 or page_num > len(doc):
+            raise HTTPException(status_code=404, detail="Page not found")
+        page = doc[page_num - 1]
+        pix = page.get_pixmap(matrix=fitz.Matrix(scale, scale), alpha=False)
+        return Response(
+            content=pix.tobytes("png"),
+            media_type="image/png",
+            headers={"Cache-Control": "private, max-age=600"},
+        )
+    finally:
+        doc.close()
 
 @app.post("/synthesize")
 async def synthesize(req: SynthRequest, bg_tasks: BackgroundTasks):
@@ -155,6 +283,16 @@ async def synthesize(req: SynthRequest, bg_tasks: BackgroundTasks):
     try:
         if engine == "kokoro":
             kokoro_voice.synthesize(text, req.voice, tmp)
+        elif engine == "azure":
+            # Azure neural TTS bills per character — refuse unless explicitly
+            # enabled (AZURE_TTS_ENABLED=1), so it can never be hit by accident.
+            if not azure_voice.is_available():
+                cleanup_file(tmp)
+                return JSONResponse(
+                    {"error": "Azure TTS is disabled. Set AZURE_TTS_ENABLED=1 to enable paid Azure voices."},
+                    status_code=403,
+                )
+            azure_voice.synthesize(text, req.voice, tmp)
         else:
             piper_synth(text, req.voice, tmp)
     except Exception as e:

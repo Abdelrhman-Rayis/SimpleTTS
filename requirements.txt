@@ -1,0 +1,18 @@
+# --- SimpleTTS server requirements (base: Piper + Azure voices) ---
+# Azure neural voices use only the stdlib (urllib), so no SDK is needed here —
+# just set AZURE_SPEECH_KEY / AZURE_SPEECH_REGION as environment variables.
+fastapi==0.136.3
+uvicorn[standard]==0.48.0
+pydantic==2.13.4
+python-multipart==0.0.29
+pydub==0.25.1            # needs the system `ffmpeg` binary installed
+PyMuPDF==1.27.2.3        # provides `fitz` for server-side page images
+piper-tts==1.2.0         # provides the `piper` CLI used by piper_synth()
+
+# --- Optional: Kokoro premium voices (HEAVY: ~2GB download, needs ~3GB+ RAM) ---
+# Uncomment these only on an instance sized for it; the app runs fine without them
+# (Kokoro voices simply won't appear in /voices).
+# kokoro==0.9.4
+# soundfile==0.13.1
+# numpy==2.4.6
+# torch==2.12.0

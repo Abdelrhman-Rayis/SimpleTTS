@@ -12,6 +12,12 @@
       "runtimeExecutable": "/bin/bash",
       "runtimeArgs": ["-c", "cd /Users/rayis/SimpleTTS && /Users/rayis/OpenWebTTS/venv/bin/python desktop.py"],
       "port": 0
+    },
+    {
+      "name": "SimpleTTS QA (.venv311 :8001)",
+      "runtimeExecutable": "/bin/bash",
+      "runtimeArgs": ["-c", "cd /Users/rayis/SimpleTTS && /Users/rayis/SimpleTTS/.venv311/bin/python -m uvicorn app:app --host 127.0.0.1 --port 8001"],
+      "port": 8001
     }
   ]
 }

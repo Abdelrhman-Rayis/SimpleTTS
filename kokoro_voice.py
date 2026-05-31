@@ -16,6 +16,7 @@ from __future__ import annotations
 import threading
 
 SAMPLE_RATE = 24000
+REQUIRED_IMPORTS = ("kokoro", "soundfile", "numpy", "torch")
 
 # Curated catalog. Add more from the Kokoro voice list as you like.
 VOICES = [
@@ -33,13 +34,37 @@ _pipelines: dict = {}        # lang_code -> KPipeline (kept warm)
 _load_lock = threading.Lock()
 
 
+def availability() -> dict:
+    missing = []
+    errors = []
+    for name in REQUIRED_IMPORTS:
+        try:
+            __import__(name)
+        except ModuleNotFoundError as exc:
+            missing.append(exc.name or name)
+        except Exception as exc:
+            errors.append(f"{name}: {type(exc).__name__}: {exc}")
+    missing = sorted(set(missing))
+    return {
+        "available": not missing and not errors,
+        "missing": missing,
+        "errors": errors,
+    }
+
+
 def is_available() -> bool:
-    try:
-        import kokoro  # noqa: F401
-        import soundfile  # noqa: F401
-        return True
-    except ImportError:
-        return False
+    return availability()["available"]
+
+
+def unavailable_label(status: dict | None = None) -> str:
+    status = status or availability()
+    bits = []
+    if status.get("missing"):
+        bits.append("missing " + ", ".join(status["missing"]))
+    if status.get("errors"):
+        bits.append("; ".join(status["errors"]))
+    reason = "; ".join(bits) or "not available"
+    return f"Kokoro unavailable: {reason}"
 
 
 def list_voices() -> list[dict]:
@@ -62,6 +87,10 @@ def _pipeline(lang_code: str):
 
 def synthesize(text: str, voice: str, output_path: str) -> None:
     """Render `text` to a WAV at `output_path` using the named Kokoro voice."""
+    status = availability()
+    if not status["available"]:
+        raise RuntimeError(unavailable_label(status))
+
     import numpy as np
     import soundfile as sf
 

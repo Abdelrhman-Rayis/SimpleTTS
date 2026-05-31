@@ -1,4 +1,5 @@
 venv/
+.venv311/
 __pycache__/
 models/
 *.wav
@@ -6,3 +7,4 @@ models/
 server.log
 .DS_Store
 desktop.log
+.env
