@@ -25,10 +25,17 @@ DB_PATH = os.path.join(_DATA_DIR, "mnfz_users.db")
 
 # ── SQLite ────────────────────────────────────────────────────────────────────
 
+# Whether the DB lives on a network share (Azure Files). WAL mode needs
+# shared-memory (mmap) which SMB/CIFS shares don't support → it crashes with
+# "database is locked". On a share we use a rollback journal instead; locally
+# we keep WAL for better concurrency.
+_DB_ON_SHARE = bool(os.environ.get("MNFZ_DATA_DIR"))
+
 def get_db() -> sqlite3.Connection:
-    conn = sqlite3.connect(DB_PATH)
+    conn = sqlite3.connect(DB_PATH, timeout=15)
     conn.row_factory = sqlite3.Row
-    conn.execute("PRAGMA journal_mode=WAL")
+    conn.execute("PRAGMA journal_mode=" + ("TRUNCATE" if _DB_ON_SHARE else "WAL"))
+    conn.execute("PRAGMA busy_timeout=15000")
     conn.execute("PRAGMA foreign_keys=ON")
     return conn
 
