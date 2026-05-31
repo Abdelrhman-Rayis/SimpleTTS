@@ -1,4 +1,4 @@
-from fastapi import FastAPI, UploadFile, File, BackgroundTasks, HTTPException, Header
+from fastapi import FastAPI, UploadFile, File, BackgroundTasks, HTTPException, Header, Request
 from fastapi.responses import HTMLResponse, FileResponse, JSONResponse, Response
 from pydantic import BaseModel
 from pydub import AudioSegment, effects
@@ -47,11 +47,18 @@ os.makedirs(CACHE_DIR, exist_ok=True)
 _BIDI_CONTROL_RE = re.compile(r"[\u200e\u200f\u202a-\u202e\u2066-\u2069]")
 _NO_SPACE_BEFORE = set("،؛؟!,.:)]}»…٪%")
 _NO_SPACE_AFTER = set("([{«")
-_PDF_RENDER_CACHE: OrderedDict[str, bytes] = OrderedDict()
+# Privacy: the render cache holds raw PDF bytes only long enough to rasterize
+# page images. Each entry tracks the set of client session-ids (mnfz_sid cookie)
+# that uploaded that exact PDF, so /page-image only serves bytes back to the
+# session that supplied them — another user can never fetch your pages even if
+# they learn the (content-hash) doc_id.
+_PDF_RENDER_CACHE: OrderedDict[str, dict] = OrderedDict()  # doc_id -> {"bytes":bytes,"owners":set[str]}
 _PDF_RENDER_CACHE_LOCK = threading.Lock()
 _MAX_RENDER_CACHE_DOCS = 8
 _MIN_RENDER_SCALE = 0.5
 _MAX_RENDER_SCALE = 3.0
+_SID_COOKIE = "mnfz_sid"
+_SID_MAX_AGE = 60 * 60 * 24 * 30  # 30 days
 
 
 class SynthRequest(BaseModel):
@@ -81,19 +88,32 @@ def cleanup_file(path: str) -> None:
     except Exception:
         pass
 
-def remember_pdf_for_render(doc_id: str, pdf_bytes: bytes) -> None:
+def remember_pdf_for_render(doc_id: str, pdf_bytes: bytes, owner: str) -> None:
     with _PDF_RENDER_CACHE_LOCK:
-        _PDF_RENDER_CACHE[doc_id] = pdf_bytes
+        entry = _PDF_RENDER_CACHE.get(doc_id)
+        if entry is None:
+            entry = {"bytes": pdf_bytes, "owners": set()}
+            _PDF_RENDER_CACHE[doc_id] = entry
+        if owner:
+            entry["owners"].add(owner)
         _PDF_RENDER_CACHE.move_to_end(doc_id)
         while len(_PDF_RENDER_CACHE) > _MAX_RENDER_CACHE_DOCS:
             _PDF_RENDER_CACHE.popitem(last=False)
 
-def cached_pdf_for_render(doc_id: str) -> bytes | None:
+def cached_pdf_for_render(doc_id: str, owner: str) -> bytes | None:
     with _PDF_RENDER_CACHE_LOCK:
-        pdf_bytes = _PDF_RENDER_CACHE.get(doc_id)
-        if pdf_bytes is not None:
-            _PDF_RENDER_CACHE.move_to_end(doc_id)
-        return pdf_bytes
+        entry = _PDF_RENDER_CACHE.get(doc_id)
+        if entry is None:
+            return None
+        # Ownership check: only a session that uploaded this PDF may render it.
+        if not owner or owner not in entry["owners"]:
+            return None
+        _PDF_RENDER_CACHE.move_to_end(doc_id)
+        return entry["bytes"]
+
+def _client_sid(request: Request) -> str:
+    """Return the caller's existing mnfz_sid cookie, or '' if not set."""
+    return request.cookies.get(_SID_COOKIE, "") or ""
 
 def clean_extracted_text(text: str) -> str:
     return _BIDI_CONTROL_RE.sub("", unicodedata.normalize("NFC", text or "")).strip()
@@ -269,10 +289,20 @@ def list_voices():
     return {"voices": voices, "kokoro": kokoro_status}
 
 @app.post("/extract")
-async def extract_pdf(file: UploadFile = File(...)):
+async def extract_pdf(request: Request, response: Response, file: UploadFile = File(...)):
     pdf_bytes = await file.read()
     doc_id = hashlib.sha256(pdf_bytes).hexdigest()
-    remember_pdf_for_render(doc_id, pdf_bytes)
+    # Bind this upload to the caller's private session. Mint a session id on
+    # first upload; only this session may later render the PDF's page images.
+    sid = _client_sid(request)
+    if not sid:
+        sid = uuid.uuid4().hex
+        response.set_cookie(
+            _SID_COOKIE, sid,
+            max_age=_SID_MAX_AGE, httponly=True, samesite="lax",
+            secure=(request.url.scheme == "https"),
+        )
+    remember_pdf_for_render(doc_id, pdf_bytes, sid)
     doc = fitz.open(stream=pdf_bytes, filetype="pdf")
     total_pages = len(doc)
 
@@ -341,11 +371,15 @@ async def extract_pdf(file: UploadFile = File(...)):
     return {"doc_id": doc_id, "total_pages": total_pages, "pages": pages}
 
 @app.get("/page-image/{doc_id}/{page_num}")
-def page_image(doc_id: str, page_num: int, scale: float = 1.6):
+def page_image(doc_id: str, page_num: int, request: Request, scale: float = 1.6):
     if not re.fullmatch(r"[0-9a-f]{64}", doc_id or ""):
         raise HTTPException(status_code=404, detail="Unknown PDF")
 
-    pdf_bytes = cached_pdf_for_render(doc_id)
+    # Private rendering: serve page images only to the session that uploaded
+    # this PDF (cookie set by /extract). Other users get 404 even with a valid
+    # doc_id. <img> requests can't carry the JWT header, so ownership is by cookie.
+    sid = _client_sid(request)
+    pdf_bytes = cached_pdf_for_render(doc_id, sid)
     if pdf_bytes is None:
         raise HTTPException(status_code=404, detail="PDF render cache expired; reload the PDF")
 

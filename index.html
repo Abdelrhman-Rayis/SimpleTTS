@@ -1770,11 +1770,25 @@ function idbReq(req) {
     });
 }
 
+// Privacy: the local library is scoped to the signed-in account. A stable
+// owner key is derived from the user id; logged-out sessions have no owner.
+function currentLibraryOwner() {
+    return (_authUser && _authUser.id != null) ? 'u' + _authUser.id : null;
+}
+
 async function listLibraryMeta() {
+    // Signed out → show nothing on the (public) home page. A user's documents
+    // must never be visible to whoever uses the browser after they log out.
+    const owner = currentLibraryOwner();
+    if (!owner) return [];
     const db = await openLibraryDb();
     const tx = db.transaction(LIBRARY_META_STORE, 'readonly');
     const items = await idbReq(tx.objectStore(LIBRARY_META_STORE).getAll());
-    return (items || []).sort((a, b) => (b.lastOpened || 0) - (a.lastOpened || 0));
+    // Show the current user's documents, plus any legacy untagged entries
+    // (created before per-user scoping) so existing libraries aren't lost.
+    return (items || [])
+        .filter(it => it.owner === owner || it.owner == null)
+        .sort((a, b) => (b.lastOpened || 0) - (a.lastOpened || 0));
 }
 
 async function getLibraryMeta(id) {
@@ -1791,6 +1805,9 @@ async function getLibraryBlob(id) {
 }
 
 async function putLibraryEntry(meta, blob) {
+    // Tag new entries with the current owner so they stay private to this
+    // account (and don't surface for other users or when logged out).
+    if (meta && meta.owner == null) meta.owner = currentLibraryOwner();
     const db = await openLibraryDb();
     await new Promise((resolve, reject) => {
         const tx = db.transaction([LIBRARY_META_STORE, LIBRARY_BLOB_STORE], 'readwrite');
@@ -3786,6 +3803,9 @@ function updateAuthUI() {
         if (userBar) userBar.style.display = 'none';
         document.getElementById('userMenu').style.display = 'none';
     }
+    // Re-render the library for the new auth state: a user's documents appear
+    // only while they're signed in, and vanish from the home page on sign-out.
+    if (typeof refreshLibrary === 'function') refreshLibrary();
 }
 
 function toggleUserMenu() {

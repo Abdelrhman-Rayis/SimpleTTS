@@ -401,7 +401,7 @@ Visible PDF page text was malformed (e.g. `T h e G eo Io T O n to logy`) on the 
 ---
 
 ### Session 11 — 2026-05-26
-**Agent:** Hermes, coordinating Claude Code and Codex in tmux
+**Agent:** Mnfz, coordinating Claude Code and Codex in tmux
 
 **Changes made:**
 
@@ -414,7 +414,7 @@ Visible PDF page text was malformed (e.g. `T h e G eo Io T O n to logy`) on the 
 
 21. **Coordination + safety hardening**
    - Managed the other tmux agents in read-only support roles: Claude provided UX checklist guidance; Codex provided verification and breakage-risk checklist guidance.
-   - Kept file ownership with Hermes only to avoid overlapping edits in the already-dirty repository.
+   - Kept file ownership with Mnfz only to avoid overlapping edits in the already-dirty repository.
    - Added null checks around the welcome/library DOM entry points (`openFileChooser`, `showLibraryHome`, `showReaderView`, `renderLibraryHome`, search listener, and library render targets) to reduce crash risk if the page structure changes later.
 
 **Files changed:** `/Users/rayis/SimpleTTS/index.html`, `/Users/rayis/SimpleTTS/DEVLOG.md`
