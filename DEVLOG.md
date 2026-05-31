@@ -625,3 +625,30 @@ image broke silently and nothing in the bar confirmed the session.
   always renders. Wired into `updateAuthUI`.
 
 **Files changed:** `/Users/rayis/SimpleTTS/index.html`, `/Users/rayis/SimpleTTS/DEVLOG.md`
+
+---
+
+## Session 16b — Sign-in regression (TDZ crash) — HOTFIX
+
+**Symptom:** After login, neither name nor photo appeared; user couldn't tell
+they were signed in.
+
+**Root cause (found via Chrome MCP console on live site):**
+```
+ReferenceError: Cannot access '_authUser' before initialization
+  at currentLibraryOwner (:1777) → renderMixGrid (:2097) → renderLibraryHome
+  → showLibraryHome (:1646) → (:3815)
+```
+Session 14's mix-section change added `currentLibraryOwner()` (which reads
+`_authUser`) into `renderMixGrid`. But `renderMixGrid` runs during the initial
+`showLibraryHome()` at line ~3815, while `_authUser` was declared with `let` at
+~3823 — i.e. in the temporal dead zone. The thrown ReferenceError aborted the
+rest of the script, so `checkGoogleRedirect()` (end of script) never ran and
+sign-in silently failed. Backend was fine the whole time: `/auth/google`
+returns 200 with token + user (verified live).
+
+**Fix (`index.html`):** moved the `_authToken`/`_authUser` declarations up to
+before their first use (just above `currentLibraryOwner`), removing the late
+`let` block. No other behavior change.
+
+**Files changed:** `/Users/rayis/SimpleTTS/index.html`, `/Users/rayis/SimpleTTS/DEVLOG.md`

@@ -1778,6 +1778,14 @@ function idbReq(req) {
     });
 }
 
+// Auth state. Declared early (before any render that reads it) so functions
+// like currentLibraryOwner() called during initial home render don't hit a
+// temporal-dead-zone ReferenceError, which would abort the rest of the script
+// (including checkGoogleRedirect) and silently break sign-in.
+let _authToken = localStorage.getItem('mnfz_token') || null;
+let _authUser = null;
+try { _authUser = JSON.parse(localStorage.getItem('mnfz_user') || 'null'); } catch(_){}
+
 // Privacy: the local library is scoped to the signed-in account. A stable
 // owner key is derived from the user id; logged-out sessions have no owner.
 function currentLibraryOwner() {
@@ -3825,10 +3833,6 @@ loadVoices().finally(refreshLibrary);
 /* ═══════════════════════════════════════════════════════
    Google Auth
 ═══════════════════════════════════════════════════════ */
-
-let _authToken = localStorage.getItem('mnfz_token') || null;
-let _authUser = null;
-try { _authUser = JSON.parse(localStorage.getItem('mnfz_user') || 'null'); } catch(_){}
 
 function isSignedIn() { return !!_authToken && !!_authUser; }
 
