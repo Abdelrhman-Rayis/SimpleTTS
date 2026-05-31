@@ -167,6 +167,22 @@ def get_user_docs(user_id: int) -> list[dict]:
     finally:
         conn.close()
 
+def delete_user_doc(user_id: int, doc_id: str):
+    """Remove a document and its reading progress for a user."""
+    conn = get_db()
+    try:
+        conn.execute(
+            "DELETE FROM user_docs WHERE user_id = ? AND doc_id = ?",
+            (user_id, doc_id),
+        )
+        conn.execute(
+            "DELETE FROM reading_progress WHERE user_id = ? AND doc_id = ?",
+            (user_id, doc_id),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
 def save_reading_progress(user_id: int, doc_id: str,
                           current_page: int, scroll_offset: float = 0):
     conn = get_db()

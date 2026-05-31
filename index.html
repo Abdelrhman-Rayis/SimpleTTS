@@ -769,6 +769,8 @@
         .mini-btn.primary{background:var(--mini-btn-dark);border-color:var(--mini-btn-dark);color:var(--mini-btn-dark-fg)}
         .mini-btn.primary:hover{background:var(--mini-btn-dark-h);border-color:var(--mini-btn-dark-h);color:var(--mini-btn-dark-fg)}
         .mini-btn.ghost{background:var(--card-bg)}
+        .mini-btn.danger{background:var(--card-bg);color:var(--stop);border-color:var(--card-border)}
+        .mini-btn.danger:hover{background:var(--stop);border-color:var(--stop);color:#fff}
 
         .mix-card{padding:20px;display:flex;flex-direction:column;gap:10px;cursor:pointer}
         .mix-card:hover{transform:translateY(-3px);border-color:var(--accent-soft);box-shadow:var(--card-shadow-h)}
@@ -1875,6 +1877,30 @@ async function refreshLibrary() {
     renderLibraryHome();
 }
 
+// Delete a document from the library: removes the local copy (metadata + PDF
+// blob) and, when signed in, the server record so it doesn't resync elsewhere.
+async function deleteLibraryItem(id, ev) {
+    if (ev) { ev.stopPropagation(); ev.preventDefault(); }
+    if (!id) return;
+    const item = libraryItems.find(it => it.id === id);
+    const name = ((item && item.fileName) || 'هذا الملف').replace(/\.pdf$/i, '');
+    if (!confirm('حذف «' + name + '» من مكتبتك؟ لا يمكن التراجع عن هذا الإجراء.')) return;
+
+    // Best-effort server delete (won't block the local removal if it fails).
+    if (isSignedIn()) {
+        authFetch('/user/docs/' + encodeURIComponent(id), { method: 'DELETE' }).catch(() => {});
+    }
+    try {
+        await deleteLibraryEntry(id);
+    } catch (err) {
+        console.warn('Could not delete library item:', err);
+    }
+
+    if (currentDocId === id) currentDocMeta = null;
+    libraryItems = libraryItems.filter(it => it.id !== id);
+    renderLibraryHome();
+}
+
 async function generatePdfThumbnail(doc, serverDocId) {
     // Target a fixed width so the cover stays crisp when the card upscales it
     // (cards are ~380px wide, ×2 on retina). The old scale:0.28 produced ~170px
@@ -2039,6 +2065,7 @@ function renderHeroSpotlight(items) {
                         <div class="doc-actions-row">
                             <button class="mini-btn ghost" type="button" onclick="openLibraryItem('${spotlight.id}', false)">فتح</button>
                             <button class="mini-btn primary" type="button" onclick="openLibraryItem('${spotlight.id}', true)">متابعة</button>
+                            <button class="mini-btn danger" type="button" onclick="deleteLibraryItem('${spotlight.id}', event)" aria-label="حذف الملف" title="حذف">حذف</button>
                         </div>
                     </div>
                 </div>
@@ -2064,6 +2091,7 @@ function renderContinueShelf(items) {
                 <small>${esc(progressLabel(item))}</small>
                 <div class="doc-actions-row">
                     <button class="mini-btn primary" type="button" onclick="openLibraryItem('${item.id}', true)">متابعة</button>
+                    <button class="mini-btn danger" type="button" onclick="deleteLibraryItem('${item.id}', event)" aria-label="حذف الملف" title="حذف">حذف</button>
                 </div>
             </div>
         </article>
@@ -2089,6 +2117,7 @@ function renderRecentGrid(items) {
                 <small>${esc(progressLabel(item))}</small>
                 <div class="doc-actions-row">
                     ${hasSavedProgress(item) ? `<button class="mini-btn primary" type="button" onclick="openLibraryItem('${item.id}', true)">متابعة</button>` : `<button class="mini-btn ghost" type="button" onclick="openLibraryItem('${item.id}', false)">فتح</button>`}
+                    <button class="mini-btn danger" type="button" onclick="deleteLibraryItem('${item.id}', event)" aria-label="حذف الملف" title="حذف">حذف</button>
                 </div>
             </div>
         </article>

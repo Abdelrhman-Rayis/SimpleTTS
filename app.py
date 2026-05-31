@@ -205,6 +205,12 @@ async def save_user_doc(req: SaveDocRequest, authorization: str | None = Header(
                        req.page_count, req.file_size)
     return {"ok": True}
 
+@app.delete("/user/docs/{doc_id}")
+async def delete_user_doc_route(doc_id: str, authorization: str | None = Header(None)):
+    user = _require_user(authorization)
+    auth.delete_user_doc(int(user["sub"]), doc_id)
+    return {"ok": True}
+
 class SaveProgressRequest(BaseModel):
     doc_id: str
     current_page: int

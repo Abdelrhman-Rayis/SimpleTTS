@@ -652,3 +652,25 @@ before their first use (just above `currentLibraryOwner`), removing the late
 `let` block. No other behavior change.
 
 **Files changed:** `/Users/rayis/SimpleTTS/index.html`, `/Users/rayis/SimpleTTS/DEVLOG.md`
+
+---
+
+## Session 17 — Delete documents from the library
+
+**Request:** let the user delete their documents from the library.
+
+**Implementation:**
+- `index.html`:
+  - New `deleteLibraryItem(id, ev)` — confirms (Arabic prompt), removes the local
+    IndexedDB copy via `deleteLibraryEntry` (metadata + PDF blob), best-effort
+    `DELETE /user/docs/{id}` when signed in (so it doesn't resync on other
+    devices), clears `currentDocMeta` if the open doc was deleted, then
+    re-renders. Uses `ev.stopPropagation()` so the click doesn't open the card.
+  - Added a "حذف" (delete) button to the card action rows in `renderRecentGrid`,
+    `renderContinueShelf`, and the hero spotlight.
+  - New `.mini-btn.danger` style (red text, fills red on hover).
+- `auth.py`: `delete_user_doc(user_id, doc_id)` — deletes from `user_docs` and
+  `reading_progress`.
+- `app.py`: `DELETE /user/docs/{doc_id}` route (auth-required).
+
+**Files changed:** `index.html`, `app.py`, `auth.py`, `DEVLOG.md`
