@@ -779,3 +779,65 @@ the container env + `/tmp/mnfz_admin_key.txt` locally, not in git).
 **Files changed:** `app.py`, `auth.py`, `index.html`, `desktop.html`,
 `Dockerfile`, `DEVLOG.md` + Azure infra (storage account, env storage, container
 app volume/env).
+
+---
+
+## Session 20 — Auto language voice + PDF upload loading bar
+
+**Request:** (1) the player should pick the voice automatically based on the
+text's language — more English words than Arabic → an English voice, and vice
+versa; (2) show a loading bar while a PDF is uploading to the player.
+
+**Implementation (`index.html` only):**
+
+29. **Auto-language voice selection.**
+   - Added a `🌐 تلقائي — حسب لغة النص` option at the top of `#voiceSelect`
+     (`value="__auto__"`), and it's now the **default** selection whenever the
+     server exposes voices in more than one language (`autoUseful` in
+     `loadVoices`). The live server has Piper `ar_JO-kareem-medium` +
+     `en_US-lessac-medium`, so auto is on by default.
+   - `loadVoices` now stores the full list in a new global `allVoices`.
+   - New helpers: `voiceLangOf(v)` infers a voice's language (Azure → `locale`
+     prefix; Kokoro → first id char a/b=en, e=es…; Piper → `ar_`/`en_` name
+     prefix); `detectTextLang(text)` counts Arabic vs Latin letters and returns
+     `'ar'`/`'en'` (defaults `'ar'` when no letters — app is Arabic-first);
+     `pickAutoVoice(text)` chooses a usable voice matching the detected language,
+     **preferring Piper** (free + fast, same as the previous default) within the
+     language pool; `voiceForText(text)` returns the auto pick when auto is on,
+     else `selectedVoice`.
+   - `generateAndPlay` and `prefetchNextPara` now resolve the voice via
+     `voiceForText(text)` per synthesis chunk instead of always using
+     `selectedVoice`. The detection unit is the **synthesis chunk (a paragraph)**,
+     not a literal sentence — synthesis + highlight is per-paragraph, so a
+     paragraph is voiced by its dominant language. Most real paragraphs are
+     monolingual, so this gives the intended "Arabic read in Arabic, English read
+     in English" behavior. The auto pick is deterministic from text, so the
+     prefetch cache stays consistent.
+   - Hero stat label shows `تلقائي` when auto is active.
+
+30. **PDF upload loading bar.**
+   - Added a centered `#uploadOverlay` card (filename + title + progress track +
+     %) with `.upload-*` CSS using the existing `--primary`/`--accent` tokens.
+     `position:fixed; inset:0` so it always centers in the viewport (the home view
+     is still active when an upload starts, and `position:absolute` centered it in
+     the tall scrollable home and pushed it off-screen).
+   - New JS: `uploadBarShow/Set/Extracting/Hide` and `uploadFormData(url, form,
+     onProgress)` — an `XMLHttpRequest` wrapper that reports real upload progress
+     (`fetch` can't) and returns parsed JSON.
+   - `loadPDF` now shows the bar, maps the byte-upload to 5%→90%, flips to an
+     indeterminate "جارٍ معالجة الصفحات…" state while the server extracts, then
+     completes and hides (also hidden in `finally`/`catch`).
+
+**Verification (live Chrome preview on `.venv311` :8001, both Piper langs):**
+   - `pickAutoVoice`: pure/mostly Arabic → `ar_JO-kareem-medium`; pure/mostly
+     English → `en_US-lessac-medium`. `detectTextLang` correct incl. punctuation-
+     only → `ar`.
+   - Real end-to-end: injected a 2-page mixed-text PDF as a `File` and ran
+     `loadPDF` — xhr upload succeeded, `/extract` returned 2 pages, text extracted,
+     overlay auto-hid. `voiceForText(englishParagraph)` → en voice and
+     `/synthesize` returned a valid 359 KB `audio/wav`.
+   - Loading bar screenshotted centered at 62% with filename + title + %. No
+     console errors from the feature (only the unrelated localhost Google-auth
+     errors).
+
+**Files changed:** `index.html`, `DEVLOG.md`
