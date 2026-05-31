@@ -561,6 +561,8 @@
                             background:var(--modal-overlay);
                             display:flex;align-items:center;justify-content:center;
                             backdrop-filter:blur(4px)}
+        .auth-modal-overlay[style*="visibility: hidden"],
+        .auth-modal-overlay[style*="visibility:hidden"]{pointer-events:none}
         .auth-modal{position:relative;background:var(--card-bg);
                     border-radius:20px;padding:44px 40px 36px;
                     max-width:400px;width:90%;text-align:center;
@@ -3709,23 +3711,11 @@ try { _authUser = JSON.parse(localStorage.getItem('mnfz_user') || 'null'); } cat
 function isSignedIn() { return !!_authToken && !!_authUser; }
 
 function openAuthModal() {
-    document.getElementById('authModalOverlay').style.display = '';
-    // Render Google button now that the modal is visible
-    if (window._googleBtnRendered) return;
-    const GOOGLE_CLIENT_ID = document.querySelector('meta[name="google-client-id"]')
-        ? document.querySelector('meta[name="google-client-id"]').content : '';
-    if (GOOGLE_CLIENT_ID && window.google?.accounts?.id) {
-        google.accounts.id.renderButton(
-            document.getElementById('authModalGoogleBtn'),
-            { theme: 'outline', size: 'large', text: 'signin_with', shape: 'rectangular',
-              width: 280, locale: 'ar' }
-        );
-        window._googleBtnRendered = true;
-    }
+    document.getElementById('authModalOverlay').style.visibility = 'visible';
 }
 
 function closeAuthModal() {
-    document.getElementById('authModalOverlay').style.display = 'none';
+    document.getElementById('authModalOverlay').style.visibility = 'hidden';
 }
 
 function handleGoogleCredential(response) {
@@ -3781,10 +3771,6 @@ function signOut() {
     _authUser = null;
     updateAuthUI();
     document.getElementById('userMenu').style.display = 'none';
-    window._googleBtnRendered = false;
-    // Clear old rendered button so a fresh one appears next time
-    const btnContainer = document.getElementById('authModalGoogleBtn');
-    if (btnContainer) btnContainer.innerHTML = '';
     if (window.google?.accounts?.id) {
         google.accounts.id.disableAutoSelect();
     }
@@ -3865,6 +3851,11 @@ window.addEventListener('load', () => {
             auto_select: false,
             context: 'signin'
         });
+        google.accounts.id.renderButton(
+            document.getElementById('authModalGoogleBtn'),
+            { theme: 'outline', size: 'large', text: 'signin_with', shape: 'rectangular',
+              width: 280, locale: 'ar' }
+        );
         if (isSignedIn()) {
             google.accounts.id.prompt();
         }
@@ -3873,7 +3864,7 @@ window.addEventListener('load', () => {
 </script>
 
 <!-- Auth Modal -->
-<div class="auth-modal-overlay" id="authModalOverlay" style="display:none">
+<div class="auth-modal-overlay" id="authModalOverlay" style="visibility:hidden">
     <div class="auth-modal">
         <button class="auth-modal-close" onclick="closeAuthModal()" aria-label="إغلاق">✕</button>
         <div class="auth-modal-icon">
