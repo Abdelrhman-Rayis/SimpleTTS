@@ -3839,28 +3839,31 @@ document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') closeAuthModal();
 });
 
-// Init Google Identity Services
-window.addEventListener('load', () => {
+// Init Google Identity Services — poll until GIS is ready
+(function initGoogleAuth() {
     updateAuthUI();
-    const GOOGLE_CLIENT_ID = document.querySelector('meta[name="google-client-id"]')
-        ? document.querySelector('meta[name="google-client-id"]').content : '';
-    if (GOOGLE_CLIENT_ID && window.google?.accounts?.id) {
-        google.accounts.id.initialize({
-            client_id: GOOGLE_CLIENT_ID,
-            callback: handleGoogleCredential,
-            auto_select: false,
-            context: 'signin'
-        });
-        google.accounts.id.renderButton(
-            document.getElementById('authModalGoogleBtn'),
-            { theme: 'outline', size: 'large', text: 'signin_with', shape: 'rectangular',
-              width: 280, locale: 'ar' }
-        );
-        if (isSignedIn()) {
-            google.accounts.id.prompt();
-        }
+    const metaClientId = document.querySelector('meta[name="google-client-id"]');
+    const GOOGLE_CLIENT_ID = metaClientId ? metaClientId.content : '';
+    if (!GOOGLE_CLIENT_ID) return;
+    if (!window.google || !window.google.accounts || !window.google.accounts.id) {
+        // GIS script hasn't loaded yet — retry
+        return setTimeout(initGoogleAuth, 200);
     }
-});
+    google.accounts.id.initialize({
+        client_id: GOOGLE_CLIENT_ID,
+        callback: handleGoogleCredential,
+        auto_select: false,
+        context: 'signin'
+    });
+    google.accounts.id.renderButton(
+        document.getElementById('authModalGoogleBtn'),
+        { theme: 'outline', size: 'large', text: 'signin_with', shape: 'rectangular',
+          width: 280, locale: 'ar' }
+    );
+    if (isSignedIn()) {
+        google.accounts.id.prompt();
+    }
+})();
 </script>
 
 <!-- Auth Modal -->
