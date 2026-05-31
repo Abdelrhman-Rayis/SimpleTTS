@@ -204,10 +204,13 @@ async def get_progress(doc_id: str, authorization: str | None = None):
 @app.get("/")
 def read_root():
     with open("index.html", "r", encoding="utf-8") as f:
-        return HTMLResponse(
-            f.read(),
-            headers={"Cache-Control": "no-store, max-age=0"},
-        )
+        html = f.read()
+    client_id = os.environ.get("GOOGLE_CLIENT_ID", "")
+    html = html.replace("__GOOGLE_CLIENT_ID_PLACEHOLDER__", client_id)
+    return HTMLResponse(
+        html,
+        headers={"Cache-Control": "no-store, max-age=0"},
+    )
 
 @app.get("/voices")
 def list_voices():
