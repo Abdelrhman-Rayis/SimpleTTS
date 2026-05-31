@@ -3918,9 +3918,9 @@ function startGoogleLogin() {
     const CLIENT_ID = document.querySelector('meta[name="google-client-id"]')
         ? document.querySelector('meta[name="google-client-id"]').content : '';
     if (!CLIENT_ID) return;
-    const redirectUri = window.location.origin;
     const nonce = crypto.randomUUID();
     localStorage.setItem('mnfz_nonce', nonce);
+    const redirectUri = window.location.origin;
     const scope = 'email profile';
     const authUrl = 'https://accounts.google.com/o/oauth2/v2/auth?' +
         'client_id=' + CLIENT_ID +
@@ -3929,33 +3929,22 @@ function startGoogleLogin() {
         '&scope=' + encodeURIComponent(scope) +
         '&nonce=' + nonce +
         '&prompt=select_account';
-    // Use a popup for better UX
-    const w = 500, h = 600;
-    const left = (screen.width - w) / 2;
-    const top = (screen.height - h) / 2;
-    const popup = window.open(authUrl, 'googleAuth',
-        'width=' + w + ',height=' + h + ',left=' + left + ',top=' + top);
-    // Listen for the token in the popup URL
-    const checkInterval = setInterval(function() {
-        try {
-            if (!popup || popup.closed) { clearInterval(checkInterval); return; }
-            const hash = popup.location.hash;
-            if (hash && hash.includes('access_token')) {
-                clearInterval(checkInterval);
-                const params = new URLSearchParams(hash.substring(1));
-                const credential = params.get('id_token') || params.get('access_token');
-                popup.close();
-                if (credential) {
-                    const nonce = localStorage.getItem('mnfz_nonce') || '';
-                    localStorage.removeItem('mnfz_nonce');
-                    handleGoogleCredential({ credential: credential, nonce: nonce });
-                }
-            }
-        } catch(e) {
-            // cross-origin until Google redirects back — expected
-        }
-    }, 500);
+    window.location.href = authUrl;
 }
+
+// Handle redirect back from Google (token in URL hash)
+(function checkGoogleRedirect() {
+    const hash = window.location.hash;
+    if (!hash || !hash.includes('id_token')) return;
+    const params = new URLSearchParams(hash.substring(1));
+    const credential = params.get('id_token');
+    if (!credential) return;
+    // Clean URL
+    history.replaceState(null, '', window.location.pathname);
+    const nonce = localStorage.getItem('mnfz_nonce') || '';
+    localStorage.removeItem('mnfz_nonce');
+    handleGoogleCredential({ credential: credential, nonce: nonce });
+})();
 </script>
 
 <!-- Auth Modal -->
