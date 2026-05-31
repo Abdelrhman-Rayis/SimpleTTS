@@ -7,7 +7,6 @@
     <title>منفذ — mnfz.tech</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <script>pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';</script>
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
     <style>
         @font-face{font-family:"Thmanyah Sans UI";src:url("https://framerusercontent.com/assets/x6EBzvXf1Fi35XhsRoHxePDVo.woff2") format("woff2");font-display:swap;font-style:normal;font-weight:400}
         @font-face{font-family:"Thmanyah Sans UI";src:url("https://framerusercontent.com/assets/oE98mOPE28KTzUeptOLRIaqW1I.woff2") format("woff2");font-display:swap;font-style:normal;font-weight:500}
@@ -584,6 +583,16 @@
         .auth-modal-sub{font-family:var(--font-ui);font-size:.85rem;
                         color:var(--subtle);margin-bottom:28px;line-height:1.5}
         .auth-modal-google{display:flex;justify-content:center;margin-bottom:20px}
+        .google-custom-btn{display:inline-flex;align-items:center;gap:10px;
+                           padding:10px 24px;border-radius:var(--r-s);
+                           background:#fff;border:1px solid #dadce0;
+                           color:#1f1f1f;cursor:pointer;font-family:var(--font-ui);
+                           font-size:.88rem;font-weight:500;
+                           box-shadow:0 1px 2px rgba(0,0,0,.08);
+                           transition:background .15s ease,box-shadow .15s ease}
+        .google-custom-btn:hover{background:#f8fafd;box-shadow:0 1px 3px rgba(0,0,0,.15)}
+        .google-custom-btn:active{background:#f0f4f8}
+        .google-custom-btn svg{flex-shrink:0}
         .auth-modal-note{font-family:var(--font-ui);font-size:.72rem;
                          color:var(--subtle);opacity:.7}
 
@@ -3771,9 +3780,6 @@ function signOut() {
     _authUser = null;
     updateAuthUI();
     document.getElementById('userMenu').style.display = 'none';
-    if (window.google?.accounts?.id) {
-        google.accounts.id.disableAutoSelect();
-    }
     refreshLibrary();
 }
 
@@ -3839,31 +3845,48 @@ document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') closeAuthModal();
 });
 
-// Init Google Identity Services — poll until GIS is ready
+// Init Google Auth — custom button approach (no GIS iframe dependency)
 (function initGoogleAuth() {
     updateAuthUI();
-    const metaClientId = document.querySelector('meta[name="google-client-id"]');
-    const GOOGLE_CLIENT_ID = metaClientId ? metaClientId.content : '';
-    if (!GOOGLE_CLIENT_ID) return;
-    if (!window.google || !window.google.accounts || !window.google.accounts.id) {
-        // GIS script hasn't loaded yet — retry
-        return setTimeout(initGoogleAuth, 200);
-    }
-    google.accounts.id.initialize({
-        client_id: GOOGLE_CLIENT_ID,
-        callback: handleGoogleCredential,
-        auto_select: false,
-        context: 'signin'
-    });
-    google.accounts.id.renderButton(
-        document.getElementById('authModalGoogleBtn'),
-        { theme: 'outline', size: 'large', text: 'signin_with', shape: 'rectangular',
-          width: 280, locale: 'ar' }
-    );
-    if (isSignedIn()) {
-        google.accounts.id.prompt();
-    }
 })();
+
+function startGoogleLogin() {
+    const CLIENT_ID = document.querySelector('meta[name="google-client-id"]')
+        ? document.querySelector('meta[name="google-client-id"]').content : '';
+    if (!CLIENT_ID) return;
+    const redirectUri = window.location.origin;
+    const scope = 'email profile';
+    const authUrl = 'https://accounts.google.com/o/oauth2/v2/auth?' +
+        'client_id=' + CLIENT_ID +
+        '&redirect_uri=' + encodeURIComponent(redirectUri) +
+        '&response_type=id_token' +
+        '&scope=' + encodeURIComponent(scope) +
+        '&prompt=select_account';
+    // Use a popup for better UX
+    const w = 500, h = 600;
+    const left = (screen.width - w) / 2;
+    const top = (screen.height - h) / 2;
+    const popup = window.open(authUrl, 'googleAuth',
+        'width=' + w + ',height=' + h + ',left=' + left + ',top=' + top);
+    // Listen for the token in the popup URL
+    const checkInterval = setInterval(function() {
+        try {
+            if (!popup || popup.closed) { clearInterval(checkInterval); return; }
+            const hash = popup.location.hash;
+            if (hash && hash.includes('access_token')) {
+                clearInterval(checkInterval);
+                const params = new URLSearchParams(hash.substring(1));
+                const credential = params.get('id_token') || params.get('access_token');
+                popup.close();
+                if (credential) {
+                    handleGoogleCredential({ credential: credential });
+                }
+            }
+        } catch(e) {
+            // cross-origin until Google redirects back — expected
+        }
+    }, 500);
+}
 </script>
 
 <!-- Auth Modal -->
@@ -3877,7 +3900,12 @@ document.addEventListener('keydown', function(e) {
         </div>
         <h2 class="auth-modal-title">تسجيل الدخول إلى منفذ</h2>
         <p class="auth-modal-sub">احفظ ملفاتك وتقدّم قراءتك عبر جميع أجهزتك</p>
-        <div class="auth-modal-google" id="authModalGoogleBtn"></div>
+        <div class="auth-modal-google" id="authModalGoogleBtn">
+            <button class="google-custom-btn" onclick="startGoogleLogin()">
+                <svg width="20" height="20" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+                <span>تسجيل الدخول بحساب Google</span>
+            </button>
+        </div>
         <p class="auth-modal-note">نستخدم Google فقط — لا كلمات مرور، لا حسابات جديدة</p>
     </div>
 </div>
