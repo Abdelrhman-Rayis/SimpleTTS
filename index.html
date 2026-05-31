@@ -616,6 +616,11 @@
                      transition:border-color .15s ease}
         .user-avatar:hover{border-color:var(--primary)}
         .user-avatar img{border-radius:50%;object-fit:cover;width:28px;height:28px}
+        .user-avatar .avatar-initial{font-family:var(--font-ui);font-weight:700;
+                     font-size:.95rem;line-height:1;color:#fff;
+                     width:28px;height:28px;border-radius:50%;
+                     display:inline-flex;align-items:center;justify-content:center;
+                     background:var(--primary)}
         .user-menu{position:absolute;top:56px;right:18px;z-index:999;
                    background:var(--card-bg);border:1px solid var(--card-border);
                    border-radius:var(--r-s);padding:16px;min-width:220px;
@@ -1153,7 +1158,9 @@
                     <button class="user-bar-files" type="button" onclick="openMyFiles()">ملفاتي</button>
                     <button class="user-avatar" type="button" id="userAvatar"
                             title="الحساب" aria-label="الحساب" onclick="toggleUserMenu()">
-                        <img id="userAvatarImg" src="" alt="" width="28" height="28">
+                        <img id="userAvatarImg" src="" alt="" width="28" height="28"
+                             referrerpolicy="no-referrer">
+                        <span class="avatar-initial" id="userAvatarInitial" style="display:none"></span>
                     </button>
                 </div>
                 <button class="theme-toggle" type="button" onclick="toggleTheme()"
@@ -3856,6 +3863,35 @@ function handleGoogleCredential(response) {
     .catch(err => console.error('Google auth error:', err));
 }
 
+// Show the Google profile photo, falling back to a colored initial circle when
+// the picture is missing or fails to load (Google's lh3 URLs can 403). This
+// guarantees the user always sees a logged-in indicator in the bar.
+function setAvatarPhoto(url, name) {
+    const img = document.getElementById('userAvatarImg');
+    const initial = document.getElementById('userAvatarInitial');
+    if (!img || !initial) return;
+    const ch = ((name || '').trim()[0] || '؟').toUpperCase();
+    const showInitial = () => {
+        img.style.display = 'none';
+        initial.textContent = ch;
+        initial.style.display = '';
+    };
+    const showImg = () => {
+        initial.style.display = 'none';
+        img.style.display = '';
+    };
+    img.onerror = showInitial;
+    img.onload = showImg;
+    if (url) {
+        img.src = url;
+        // If it's already cached and complete, onload may not fire.
+        if (img.complete && img.naturalWidth > 0) showImg();
+    } else {
+        img.removeAttribute('src');
+        showInitial();
+    }
+}
+
 function updateAuthUI() {
     const signinBtn = document.getElementById('signinBtn');
     const userBar = document.getElementById('userBar');
@@ -3865,9 +3901,10 @@ function updateAuthUI() {
         if (signinBtn) signinBtn.style.display = 'none';
         if (userBar) {
             userBar.style.display = '';
-            avatarImg.src = _authUser.picture || '';
-            avatarImg.alt = _authUser.name;
-            userName.textContent = _authUser.name || _authUser.email;
+            const displayName = _authUser.name || _authUser.email || '';
+            userName.textContent = displayName;
+            avatarImg.alt = displayName;
+            setAvatarPhoto(_authUser.picture || '', displayName);
         }
         loadUserPreferences();
     } else {

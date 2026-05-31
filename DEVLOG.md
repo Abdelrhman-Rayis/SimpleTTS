@@ -603,3 +603,25 @@ in CSS pixels → soft. (The canvas fallback path already used dpr.)
   route through `generateAndPlay` → `startPlayback`, so they're covered too.)
 
 **Files changed:** `/Users/rayis/SimpleTTS/index.html`, `/Users/rayis/SimpleTTS/DEVLOG.md`
+
+---
+
+## Session 16 — Avatar photo not showing after login
+
+**Symptom:** After signing in, the profile photo didn't appear, leaving the user
+unsure whether they were logged in.
+
+**Cause:** The avatar `<img>` loaded the raw Google photo URL
+(`lh3.googleusercontent.com/...`) with no `referrerpolicy`. Google frequently
+returns 403 for those profile images when a referrer header is sent, so the
+image broke silently and nothing in the bar confirmed the session.
+
+**Fix (`index.html`):**
+- Added `referrerpolicy="no-referrer"` to `#userAvatarImg`.
+- Added a `#userAvatarInitial` span + `.avatar-initial` style (primary-colored
+  circle with the user's first initial).
+- New `setAvatarPhoto(url, name)`: shows the photo on load, and on `onerror`
+  (or missing URL) falls back to the initial circle — so a logged-in indicator
+  always renders. Wired into `updateAuthUI`.
+
+**Files changed:** `/Users/rayis/SimpleTTS/index.html`, `/Users/rayis/SimpleTTS/DEVLOG.md`
