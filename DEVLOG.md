@@ -742,30 +742,36 @@ navy/gold palette but with a more premium "teaser" feel (animated aurora glow,
   key is **never** committed (the repo is public) — it lives only in the
   container's env vars.
 
-**DB (`auth.py`):**
-- New `waitlist` table (id, name, email UNIQUE, product, created_at).
-- `add_waitlist_entry(name, email, product)` — `INSERT OR IGNORE`, lowercases
-  email + trims name, returns `'added'`/`'exists'`. `get_waitlist_entries()`.
-- **Made the DB path configurable:** `DB_PATH` now uses `MNFZ_DATA_DIR` env var
-  (defaults to the app dir for local dev) so SQLite can live on a persistent
-  volume.
+**Storage (`auth.py`):**
+- `add_waitlist_entry(name, email, product)` — lowercases email + trims name,
+  dedups by email, returns `'added'`/`'exists'`. `get_waitlist_entries()`.
+- **Waitlist is an append-only JSONL file** at `MNFZ_DATA_DIR/waitlist.jsonl`
+  (persistent volume), guarded by a `threading.Lock`.
+
+**IMPORTANT — why not SQLite on the volume:** I first tried moving the whole
+SQLite DB onto the Azure Files volume (`DB_PATH = MNFZ_DATA_DIR/...`). It crashed
+the app on startup with `sqlite3.OperationalError: database is locked` — first on
+`PRAGMA journal_mode=WAL` (WAL needs shared-memory/mmap, unsupported on SMB),
+then **even with `TRUNCATE` journal**, because SQLite's file locking itself is
+not supported on Azure Files / SMB shares. Conclusion: **SQLite cannot live on
+Azure Files.** So the SQLite DB (users/docs/progress/prefs) stays on the local
+ephemeral disk (accounts still reset on deploy, as before), and only the waitlist
+— a simple append-only log — is persisted as JSONL on the volume. Plain file I/O
+works fine on SMB; only SQLite's locking does not. Two failed revisions
+(`mnfz--0000029`, `mnfz--0000030`) before this fix; revision history shows them.
 
 **Frontend (`index.html`):** added a third hero button — an `<a href="/desktop">`
 with a `.hero-btn.desktop` teal-gradient style and a gold "قريباً" badge.
 
-**Infra — persistent volume (NEW, important):** previously the SQLite DB lived
-in the ephemeral container filesystem and was **wiped on every deploy** (user
-accounts too). For a waitlist that's fatal. Fixed by mounting an Azure Files
-share at `/data` and setting `MNFZ_DATA_DIR=/data`:
+**Infra — persistent volume:** mounted an Azure Files share at `/data`:
 - Storage account `mnfzdata53b33548` (RG `simpletts-rg`, East US), file share
   `mnfzdata`. (Had to register the `Microsoft.Storage` resource provider first.)
-- Registered the share with env `simpletts-env` and added a volume + mount to the
-  `mnfz` container app, plus env vars `MNFZ_DATA_DIR=/data` and `ADMIN_KEY`.
+- Registered the share with env `simpletts-env`; added a volume `data-vol` +
+  mount at `/data` to the `mnfz` container app (via `az containerapp update
+  --yaml`), plus env vars `MNFZ_DATA_DIR=/data` and `ADMIN_KEY` (secret
+  `admin-key`).
 - The CI deploy step is `az containerapp update --image` only, so it preserves
   the volume + env config across future deploys.
-- **One-time effect:** existing logged-in users live in the old ephemeral DB and
-  will need to re-login once after this change (their session moves to the fresh
-  persistent DB). From now on, accounts + waitlist persist across deploys.
 
 **Admin link:** `https://mnfz.tech/admin/waitlist?key=<ADMIN_KEY>` (key stored in
 the container env + `/tmp/mnfz_admin_key.txt` locally, not in git).

@@ -4,6 +4,8 @@ Google OAuth authentication, JWT tokens, and SQLite user database for Mnfz.
 import os
 import sqlite3
 import time
+import json
+import threading
 import jwt
 from jwt import PyJWTError
 from google.oauth2 import id_token as google_id_token
@@ -16,26 +18,27 @@ JWT_SECRET = os.environ.get("JWT_SECRET", os.environ.get("AZURE_SPEECH_KEY", os.
 JWT_ALGORITHM = "HS256"
 JWT_EXPIRY_HOURS = 72
 
-# Data dir is overridable so the SQLite DB can live on a persistent volume
-# (Azure Files) instead of the ephemeral container filesystem. Defaults to the
-# app directory for local development.
-_DATA_DIR = os.environ.get("MNFZ_DATA_DIR", os.path.dirname(os.path.abspath(__file__)))
-os.makedirs(_DATA_DIR, exist_ok=True)
-DB_PATH = os.path.join(_DATA_DIR, "mnfz_users.db")
+_APP_DIR = os.path.dirname(os.path.abspath(__file__))
+
+# SQLite stays on the local (ephemeral) container disk: SQLite's file locking is
+# not supported on Azure Files / SMB shares (every connection fails with
+# "database is locked"), so it cannot live on the persistent volume. User
+# accounts therefore reset on deploy, as before.
+DB_PATH = os.path.join(_APP_DIR, "mnfz_users.db")
+
+# The waitlist, which MUST survive deploys, is stored as an append-only JSONL
+# file on the persistent volume (MNFZ_DATA_DIR → Azure Files). Plain file I/O
+# works fine on SMB; only SQLite's locking does not.
+_DATA_DIR = os.environ.get("MNFZ_DATA_DIR", _APP_DIR)
+WAITLIST_PATH = os.path.join(_DATA_DIR, "waitlist.jsonl")
+_WAITLIST_LOCK = threading.Lock()
 
 # ── SQLite ────────────────────────────────────────────────────────────────────
-
-# Whether the DB lives on a network share (Azure Files). WAL mode needs
-# shared-memory (mmap) which SMB/CIFS shares don't support → it crashes with
-# "database is locked". On a share we use a rollback journal instead; locally
-# we keep WAL for better concurrency.
-_DB_ON_SHARE = bool(os.environ.get("MNFZ_DATA_DIR"))
 
 def get_db() -> sqlite3.Connection:
     conn = sqlite3.connect(DB_PATH, timeout=15)
     conn.row_factory = sqlite3.Row
-    conn.execute("PRAGMA journal_mode=" + ("TRUNCATE" if _DB_ON_SHARE else "WAL"))
-    conn.execute("PRAGMA busy_timeout=15000")
+    conn.execute("PRAGMA journal_mode=WAL")
     conn.execute("PRAGMA foreign_keys=ON")
     return conn
 
@@ -82,14 +85,6 @@ def init_db():
             theme      TEXT DEFAULT 'light',
             lang       TEXT DEFAULT 'ar',
             updated_at REAL NOT NULL DEFAULT (unixepoch())
-        );
-
-        CREATE TABLE IF NOT EXISTS waitlist (
-            id          INTEGER PRIMARY KEY AUTOINCREMENT,
-            name        TEXT NOT NULL,
-            email       TEXT NOT NULL UNIQUE,
-            product     TEXT NOT NULL DEFAULT 'mnfz-desktop',
-            created_at  REAL NOT NULL DEFAULT (unixepoch())
         );
     """)
     conn.commit()
@@ -255,32 +250,43 @@ def get_preferences(user_id: int) -> dict:
         conn.close()
 
 # ── Waitlist (product launch sign-ups) ────────────────────────────────────────
+# Stored as an append-only JSONL file on the persistent volume so sign-ups
+# survive deploys. SQLite can't be used here (no locking on Azure Files).
+
+def _read_waitlist() -> list[dict]:
+    if not os.path.isfile(WAITLIST_PATH):
+        return []
+    out = []
+    with open(WAITLIST_PATH, "r", encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                out.append(json.loads(line))
+            except Exception:
+                continue
+    return out
 
 def add_waitlist_entry(name: str, email: str, product: str = "mnfz-desktop") -> str:
     """Add a sign-up. Returns 'added' or 'exists' (email already on the list)."""
-    conn = get_db()
-    try:
-        cur = conn.execute(
-            "INSERT OR IGNORE INTO waitlist (name, email, product) VALUES (?, ?, ?)",
-            (name.strip(), email.strip().lower(), product),
-        )
-        conn.commit()
-        return "added" if cur.rowcount > 0 else "exists"
-    finally:
-        conn.close()
+    name = name.strip()
+    email = email.strip().lower()
+    with _WAITLIST_LOCK:
+        for e in _read_waitlist():
+            if e.get("email") == email:
+                return "exists"
+        rec = {"name": name, "email": email, "product": product,
+               "created_at": time.time()}
+        os.makedirs(_DATA_DIR, exist_ok=True)
+        with open(WAITLIST_PATH, "a", encoding="utf-8") as f:
+            f.write(json.dumps(rec, ensure_ascii=False) + "\n")
+    return "added"
 
 def get_waitlist_entries(product: str | None = None) -> list[dict]:
-    conn = get_db()
-    try:
-        if product:
-            rows = conn.execute(
-                "SELECT * FROM waitlist WHERE product = ? ORDER BY created_at DESC",
-                (product,),
-            ).fetchall()
-        else:
-            rows = conn.execute(
-                "SELECT * FROM waitlist ORDER BY created_at DESC"
-            ).fetchall()
-        return [dict(r) for r in rows]
-    finally:
-        conn.close()
+    with _WAITLIST_LOCK:
+        entries = _read_waitlist()
+    if product:
+        entries = [e for e in entries if e.get("product") == product]
+    entries.sort(key=lambda e: e.get("created_at", 0), reverse=True)
+    return entries
