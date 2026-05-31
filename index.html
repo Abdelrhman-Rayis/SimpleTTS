@@ -548,12 +548,12 @@
         /* Sign-in button (themed) */
         .signin-btn{display:inline-flex;align-items:center;justify-content:center;
                     gap:7px;height:38px;padding:0 16px;border-radius:var(--r-s);
-                    background:var(--primary);border:none;
-                    color:#fff;cursor:pointer;font-family:var(--font-ui);
+                    background:transparent;border:1px solid var(--welcome-gold);
+                    color:var(--welcome-gold);cursor:pointer;font-family:var(--font-ui);
                     font-size:.82rem;font-weight:600;
-                    box-shadow:0 4px 10px rgba(31,42,50,.12);
-                    transition:background .2s ease,transform .12s ease}
-        .signin-btn:hover{background:var(--primary-h)}
+                    box-shadow:none;
+                    transition:all .2s ease}
+        .signin-btn:hover{background:var(--welcome-gold);color:var(--welcome-ink-fg, #fff)}
         .signin-btn:active{transform:scale(.96)}
 
         /* Auth Modal */
@@ -3710,6 +3710,18 @@ function isSignedIn() { return !!_authToken && !!_authUser; }
 
 function openAuthModal() {
     document.getElementById('authModalOverlay').style.display = '';
+    // Render Google button now that the modal is visible
+    if (window._googleBtnRendered) return;
+    const GOOGLE_CLIENT_ID = document.querySelector('meta[name="google-client-id"]')
+        ? document.querySelector('meta[name="google-client-id"]').content : '';
+    if (GOOGLE_CLIENT_ID && window.google?.accounts?.id) {
+        google.accounts.id.renderButton(
+            document.getElementById('authModalGoogleBtn'),
+            { theme: 'outline', size: 'large', text: 'signin_with', shape: 'rectangular',
+              width: 280, locale: 'ar' }
+        );
+        window._googleBtnRendered = true;
+    }
 }
 
 function closeAuthModal() {
@@ -3769,6 +3781,10 @@ function signOut() {
     _authUser = null;
     updateAuthUI();
     document.getElementById('userMenu').style.display = 'none';
+    window._googleBtnRendered = false;
+    // Clear old rendered button so a fresh one appears next time
+    const btnContainer = document.getElementById('authModalGoogleBtn');
+    if (btnContainer) btnContainer.innerHTML = '';
     if (window.google?.accounts?.id) {
         google.accounts.id.disableAutoSelect();
     }
@@ -3849,11 +3865,6 @@ window.addEventListener('load', () => {
             auto_select: false,
             context: 'signin'
         });
-        google.accounts.id.renderButton(
-            document.getElementById('authModalGoogleBtn'),
-            { theme: 'outline', size: 'large', text: 'signin_with', shape: 'rectangular',
-              width: 280, locale: 'ar' }
-        );
         if (isSignedIn()) {
             google.accounts.id.prompt();
         }
