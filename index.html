@@ -1502,6 +1502,7 @@ const libraryFilterChips = document.getElementById('libraryFilterChips');
 const continueShelf = document.getElementById('continueShelf');
 const recentGrid = document.getElementById('recentGrid');
 const mixGrid = document.getElementById('mixGrid');
+const mixSection = document.getElementById('mixSection');
 const continueSection = document.getElementById('continueSection');
 
 /* ═══════════════════════════════════════════════════════
@@ -2091,6 +2092,11 @@ function renderRecentGrid(items) {
 
 function renderMixGrid() {
     if (!mixGrid) return;
+    // Quick-focus tools are only meaningful for a signed-in library — hide the
+    // whole section for logged-out visitors.
+    const loggedIn = !!currentLibraryOwner();
+    if (mixSection) mixSection.style.display = loggedIn ? '' : 'none';
+    if (!loggedIn) { mixGrid.innerHTML = ''; return; }
     mixGrid.innerHTML = mixDefinitions(libraryItems).map(mix => `
         <button class="mix-card ${libraryFilter === mix.key ? 'active' : ''}" type="button" onclick="setLibraryFilter('${mix.key}')">
             <span class="mix-badge">${mix.count} ${esc(countLabel(mix.count, 'ملف', 'ملفات'))}</span>
@@ -2701,7 +2707,11 @@ async function renderPageInto(pageNum) {
             pd.pageImage.style.height = h + 'px';
             pd.wrap.style.width       = w + 'px';
             pd.wrap.style.height      = h + 'px';
-            const url = `/page-image/${encodeURIComponent(serverPdfDocId)}/${pageNum}?scale=${encodeURIComponent(SCALE)}`;
+            // Render at device-pixel resolution so HiDPI/retina screens get a
+            // crisp image. CSS width stays at SCALE; the bitmap is dpr× larger.
+            const dpr = Math.min(window.devicePixelRatio || 1, 3);
+            const renderScale = Math.min(SCALE * dpr, 4.5);
+            const url = `/page-image/${encodeURIComponent(serverPdfDocId)}/${pageNum}?scale=${encodeURIComponent(renderScale)}`;
             await loadPageImage(pd.pageImage, url);
             xS = w / pdData.width;
             yS = h / pdData.height;

@@ -548,3 +548,25 @@ not required since the server was already up).
 attribute, B3 Kokoro deps in `.venv311`) are untouched.
 
 **Files changed:** `/Users/rayis/SimpleTTS/index.html`, `/Users/rayis/SimpleTTS/DEVLOG.md`
+
+---
+
+## Session 14 — HD page rendering on HiDPI/retina
+
+**Problem:** Server-rendered PDF page images looked pixelated/blurry on retina
+displays. Root cause: the server-image render path (`renderPageInto` in
+`index.html`) requested `/page-image/.../<n>?scale=1.6` at a fixed `SCALE = 1.6`
+and set the CSS box to `width*SCALE`, but never multiplied by
+`window.devicePixelRatio`. On a dpr=2 screen the 1.6× bitmap was stretched ~2×
+in CSS pixels → soft. (The canvas fallback path already used dpr.)
+
+**Fix:**
+- `index.html` (`renderPageInto`, server-image branch): keep CSS size at
+  `pdData.{width,height} * SCALE`, but request the bitmap at
+  `renderScale = min(SCALE * min(dpr,3), 4.5)`. So a retina screen pulls a
+  ~3.2× PNG displayed in a 1.6× CSS box → crisp.
+- `app.py`: raised `_MAX_RENDER_SCALE` 3.0 → 4.5 so the higher requested scale
+  isn't clamped down. Output stays PNG (lossless), so no JPEG quality loss.
+- Thumbnail request (`scale=1.4`) left as-is — it's downscaled to a JPEG anyway.
+
+**Files changed:** `/Users/rayis/SimpleTTS/index.html`, `/Users/rayis/SimpleTTS/app.py`, `/Users/rayis/SimpleTTS/DEVLOG.md`

@@ -56,7 +56,7 @@ _PDF_RENDER_CACHE: OrderedDict[str, dict] = OrderedDict()  # doc_id -> {"bytes":
 _PDF_RENDER_CACHE_LOCK = threading.Lock()
 _MAX_RENDER_CACHE_DOCS = 8
 _MIN_RENDER_SCALE = 0.5
-_MAX_RENDER_SCALE = 3.0
+_MAX_RENDER_SCALE = 4.5
 _SID_COOKIE = "mnfz_sid"
 _SID_MAX_AGE = 60 * 60 * 24 * 30  # 30 days
 
